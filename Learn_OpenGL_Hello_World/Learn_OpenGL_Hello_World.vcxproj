@@ -75,7 +75,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <LibraryPath>C:\Users\Braedyn Kenzie\Desktop\OpenGL\libs;C:\Users\Braedyn Kenzie\Desktop\OpenGL\includes;$(LibraryPath)</LibraryPath>
-    <IncludePath>C:\Users\Braedyn Kenzie\source\repos\Learn_OpenGL_Hello_World\Learn_OpenGL_Hello_World;C:\Users\Braedyn Kenzie\Desktop\OpenGL\includes;$(IncludePath)</IncludePath>
+    <IncludePath>C:\Users\Braedyn Kenzie\Desktop\Learn OpenGL\OpenGL-Hello-World\Learn_OpenGL_Hello_World;C:\Users\Braedyn Kenzie\Desktop\OpenGL\includes;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -147,10 +147,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Shader.h" />
+    <ClInclude Include="stb_image.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="fragment_shader_src.glsl" />
     <None Include="vertex_shader_src.glsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="wooden_container_texture.jpg" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
