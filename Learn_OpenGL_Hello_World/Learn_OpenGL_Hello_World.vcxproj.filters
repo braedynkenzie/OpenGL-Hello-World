@@ -48,5 +48,8 @@
     <Image Include="wooden_container_texture.jpg">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="smiling_texture.jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

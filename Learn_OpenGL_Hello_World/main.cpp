@@ -129,8 +129,9 @@ int main() {
 	glBindVertexArray(0);
 	// -------------------------------------------------------------------------------------------------------------------------
 
-	// Texture loading
+	// Texture loading 0
 	// Generate an OpenGL texture and add data from the loaded .jpg image
+	glActiveTexture(GL_TEXTURE0); // activate the texture unit, then bind the texture
 	unsigned int woodenTexture;
 	glGenTextures(1, &woodenTexture);
 	glBindTexture(GL_TEXTURE_2D, woodenTexture);
@@ -140,23 +141,51 @@ int main() {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); // texture magnification doesn't use mipmaps
 	// Load texture as bytes (chars)
 	int texWidth, texHeight, numChannels;
-	unsigned char* imageData = stbi_load("wooden_container_texture.jpg", &texWidth, &texHeight, &numChannels, 0);
-	if (imageData)
+	unsigned char* containerImageData = stbi_load("wooden_container_texture.jpg", &texWidth, &texHeight, &numChannels, 0);
+	if (containerImageData)
 	{
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texWidth, texHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, imageData);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texWidth, texHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, containerImageData);
 		// OpenGL function to generate a mipmap with the given texture
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
 	else
 	{
-		std::cout << "ERROR: Failed to load the texture image" << std::endl;
+		std::cout << "ERROR: Failed to load the container texture image" << std::endl;
 		return -1;
 	}
-	stbi_image_free(imageData);
+	stbi_image_free(containerImageData);
 
-	
+	// Texture loading 1
+	// Generate an OpenGL texture and add data from the loaded .jpg image
+	glActiveTexture(GL_TEXTURE1); // activate the texture unit, then bind the texture
+	unsigned int smilingTexture;
+	glGenTextures(1, &smilingTexture);
+	glBindTexture(GL_TEXTURE_2D, smilingTexture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); // texture magnification doesn't use mipmaps
+	// Load texture as bytes (chars)
+	int texWidth2, texHeight2, numChannels2;
+	stbi_set_flip_vertically_on_load(true);
+	unsigned char* smilingImageData = stbi_load("smiling_texture.jpg", &texWidth2, &texHeight2, &numChannels2, 0);
+	if (smilingImageData)
+	{
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texWidth2, texHeight2, 0, GL_RGB, GL_UNSIGNED_BYTE, smilingImageData);
+		// OpenGL function to generate a mipmap with the given texture
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else
+	{
+		std::cout << "ERROR: Failed to load the smiling texture image" << std::endl;
+		return -1;
+	}
+	stbi_image_free(smilingImageData);
 
-
+	// Use defined and compiled vertex/fragment shaders
+	shaderProgram.use();
+	shaderProgram.setInt("imageTexture1", 0); 
+	shaderProgram.setInt("imageTexture2", 1); 
 
 	// Display graphics loop
 	while (!glfwWindowShouldClose(window))
@@ -170,8 +199,6 @@ int main() {
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		// Use defined and compiled vertex/fragment shaders
-		shaderProgram.use();
 		// Bind predefined Vertex Array Object (indirectly binds its attached VBOs and texture)
 		glBindVertexArray(VAO);
 		// Draw from Element Buffer Object

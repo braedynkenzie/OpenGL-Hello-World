@@ -154,6 +154,7 @@
     <None Include="vertex_shader_src.glsl" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="smiling_texture.jpg" />
     <Image Include="wooden_container_texture.jpg" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
