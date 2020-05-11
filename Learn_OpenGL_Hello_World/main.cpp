@@ -78,14 +78,25 @@ int main() {
 		0.0f, 0.0f, 1.0f,
 	};
 
-	float textureCoords[] = {
+	float textureCoordsContainer[] = {
 		1.0f, 1.0f,
+		0.0f, 1.0f,
+		0.0f, 0.0f,
+
+		1.0f, 1.0f,
+		1.0f, 0.0f,
+		0.0f, 0.0f,
+	};
+
+	float textureCoordsFace[] = {
+		
+		0.0f, 1.0f,
 		1.0f, 0.0f,
 		0.0f, 0.0f,
 
 		1.0f, 1.0f,
 		0.0f, 1.0f,
-		0.0f, 0.0f,
+		1.0f, 0.0f,
 	};
 
 	unsigned int indices[] = {
@@ -97,11 +108,12 @@ int main() {
 
 	// -------------------------------------------------------------------------------------------------------------------------
 	// Generate, bind, and fill main Vertex Array Object (VAO) and Vertex Buffer Objects (VBOs)
-	unsigned int VAO, VBO_vertices, VBO_colours, VBO_textureCoords;
+	unsigned int VAO, VBO_vertices, VBO_colours, VBO_containerTexCoords, VBO_faceTexCoords;
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO_vertices);
 	glGenBuffers(1, &VBO_colours);
-	glGenBuffers(1, &VBO_textureCoords);
+	glGenBuffers(1, &VBO_containerTexCoords);
+	glGenBuffers(1, &VBO_faceTexCoords);
 	// Order: Bind the VAO first, then bind and set vertex buffers, and then configure vertex attributes
 	glBindVertexArray(VAO);
 	// Vertices VBO
@@ -112,14 +124,20 @@ int main() {
 	glBindBuffer(GL_ARRAY_BUFFER, VBO_colours);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(colours), colours, GL_STATIC_DRAW);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	// Texture VBO
-	glBindBuffer(GL_ARRAY_BUFFER, VBO_textureCoords);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(textureCoords), textureCoords, GL_STATIC_DRAW);
+	// Texture VBOs
+	// Container texture coords
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_containerTexCoords);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(textureCoordsContainer), textureCoordsContainer, GL_STATIC_DRAW);
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+	// Smiling face texture coords
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_faceTexCoords);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(textureCoordsFace), textureCoordsFace, GL_STATIC_DRAW);
+	glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
 	// Enable attributes for VAO
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
 	glEnableVertexAttribArray(2);
+	glEnableVertexAttribArray(3);
 	// Create Element Buffer Object
 	unsigned int EBO;
 	glGenBuffers(1, &EBO);
@@ -190,6 +208,27 @@ int main() {
 	shaderProgram.setInt("imageTexture1", 0); 
 	shaderProgram.setInt("imageTexture2", 1); 
 
+	// GLM matric transformation practice
+	//
+	glm::vec4 vec(1.0f, 0.0f, 0.0f, 1.0f); // vec (1, 0, 0)
+	// Create 4x4 transformation matrix (translation)
+	glm::mat4 translateMatrix(1.0f);
+	translateMatrix = glm::translate(translateMatrix, glm::vec3(1.0f, 1.0f, 0.0f));
+	// Do the translation to the vector
+	vec = translateMatrix * vec; 
+	std::cout << "Transformed vector: (" << vec.x << "," << vec.y << "," << vec.z << ") " << std::endl;
+	// Debugging
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 4; j++) {
+			std::cout << translateMatrix[j][i] << ",";
+		}
+		std::cout << std::endl;
+	}
+
+	glm::mat4 trans(1.0f); // Init identity matrix
+	trans = glm::rotate(trans, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	trans = glm::scale(trans, glm::vec3(0.5f, 0.5f, 0.5f));
+
 	// Display graphics loop
 	while (!glfwWindowShouldClose(window))
 	{
@@ -214,7 +253,7 @@ int main() {
 		float blueValue  = (sin(timeValue + 1) / 2.0f) + 0.5f;
 		shaderProgram.setFloat4("uniformColour", redValue, greenValue, blueValue, 1.0f);
 
-		// check events and swap frame buffers (avoids flickering)
+		// Check events and swap frame buffers (avoids flickering)
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
@@ -227,7 +266,8 @@ int main() {
 	glDeleteVertexArrays(1, &VAO);
 	glDeleteBuffers(1, &VBO_vertices);
 	glDeleteBuffers(1, &VBO_colours);
-	glDeleteBuffers(1, &VBO_textureCoords);
+	glDeleteBuffers(1, &VBO_containerTexCoords);
+	glDeleteBuffers(1, &VBO_faceTexCoords);
 	glDeleteBuffers(1, &EBO);
 	glfwTerminate();
 	return 0;
