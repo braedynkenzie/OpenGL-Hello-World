@@ -62,10 +62,44 @@ int main() {
 		0.5f, 0.5f, 0.0f, // top right 1
 		0.5f, -0.5f, 0.0f, // bottom right 1
 		0.0f, -0.5f, 0.0f, // bottom left 1
-		
 		0.0f, 0.5f, 0.0f, // top right 2
 		-0.5f, 0.5f, 0.0f, // top left 2
-		-0.5f, -0.5f, 0.0f // bottom left 2
+		-0.5f, -0.5f, 0.0f, // bottom left 2
+
+		0.5f, 0.5f, 1.0f, // Cube front right
+		0.5f, -0.5f, 1.0f,
+		-0.5f, -0.5f, 1.0f, 
+		0.5f, 0.5f, 1.0f, // Cube front left
+		-0.5f, 0.5f, 1.0f, 
+		-0.5f, -0.5f, 1.0f, 
+
+		0.5f, 0.5f, 0.0f, // Cube right right
+		0.5f, -0.5f, 0.0f,
+		0.5f, -0.5f, 1.0f,
+		0.5f, 0.5f, 0.0f, // Cube right left
+		0.5f, 0.5f, 1.0f,
+		0.5f, -0.5f, 1.0f,
+
+		-0.5f, 0.5f, 0.0f, // Cube left right
+		-0.5f, -0.5f, 0.0f,
+		-0.5f, -0.5f, 1.0f,
+		-0.5f, 0.5f, 0.0f, // Cube left left
+		-0.5f, 0.5f, 1.0f,
+		-0.5f, -0.5f, 1.0f,
+
+		0.5f, 0.5f, 0.0f, // Cube top right
+		0.5f, 0.5f, 1.0f,
+		-0.5f, 0.5f, 1.0f,
+		0.5f, 0.5f, 0.0f, // Cube top left
+		-0.5f, 0.5f, 0.0f,
+		-0.5f, 0.5f, 1.0f,
+
+		0.5f, -0.5f, 0.0f, // Cube bottom right
+		0.5f, -0.5f, 1.0f,
+		-0.5f, -0.5f, 1.0f,
+		0.5f, -0.5f, 0.0f, // Cube bottom left
+		-0.5f, -0.5f, 0.0f,
+		-0.5f, -0.5f, 1.0f,
 	};
 
 	float colours[] = {
@@ -76,6 +110,48 @@ int main() {
 		1.0f, 0.0f, 0.0f,
 		0.0f, 1.0f, 0.0f,
 		0.0f, 0.0f, 1.0f,
+
+		1.0f, 0.0f, 0.0f, // Other cubes faces
+		0.0f, 1.0f, 0.0f,
+		0.0f, 0.0f, 1.0f,
+
+		1.0f, 0.0f, 0.0f,
+		0.0f, 1.0f, 0.0f,
+		0.0f, 0.0f, 1.0f,
+
+		1.0f, 0.0f, 0.0f, // Other cubes faces
+		0.0f, 1.0f, 0.0f,
+		0.0f, 0.0f, 1.0f,
+
+		1.0f, 0.0f, 0.0f,
+		0.0f, 1.0f, 0.0f,
+		0.0f, 0.0f, 1.0f,
+
+		1.0f, 0.0f, 0.0f, // Other cubes faces
+		0.0f, 1.0f, 0.0f,
+		0.0f, 0.0f, 1.0f,
+
+		1.0f, 0.0f, 0.0f,
+		0.0f, 1.0f, 0.0f,
+		0.0f, 0.0f, 1.0f,
+
+		1.0f, 0.0f, 0.0f, // Other cubes faces
+		0.0f, 1.0f, 0.0f,
+		0.0f, 0.0f, 1.0f,
+
+		1.0f, 0.0f, 0.0f,
+		0.0f, 1.0f, 0.0f,
+		0.0f, 0.0f, 1.0f,
+
+		1.0f, 0.0f, 0.0f, // Other cubes faces
+		0.0f, 1.0f, 0.0f,
+		0.0f, 0.0f, 1.0f,
+
+		1.0f, 0.0f, 0.0f,
+		0.0f, 1.0f, 0.0f,
+		0.0f, 0.0f, 1.0f,
+
+
 	};
 
 	float textureCoordsContainer[] = {
@@ -100,10 +176,25 @@ int main() {
 	};
 
 	unsigned int indices[] = {
-		0, 1, 2, // triangle #1
-		3, 4, 5, // triangle #2
-		0, 2, 3, // triangle #3
-		5, 2, 3  // triangle #4
+		0, 1, 2, // Cube back right
+		3, 4, 5, // Cube back left
+		0, 2, 3, 
+		5, 2, 3,  
+
+		6, 7, 8, // Cube front
+		9, 10, 11,
+
+		12, 13, 14, // Cube right
+		15, 16, 17,
+
+		18, 19, 20, // Cube left
+		21, 22, 23,
+
+		24, 25, 26, // Cube top
+		27, 28, 29,
+
+		30, 31, 32, // Cube bottom
+		33, 34, 35,
 	};
 
 	Shader shaderProgram = Shader("vertex_shader_src.glsl", "fragment_shader_src.glsl");
@@ -144,7 +235,7 @@ int main() {
 	unsigned int EBO;
 	glGenBuffers(1, &EBO);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * 12, indices, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(vertices), indices, GL_STATIC_DRAW);
 	// Bind EBO to VAO as well
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 	// Unbinding
@@ -210,39 +301,10 @@ int main() {
 	shaderProgram.setInt("imageTexture1", 0); 
 	shaderProgram.setInt("imageTexture2", 1); 
 
-	// GLM matric transformation practice
-	//
-	glm::vec4 vec(1.0f, 0.0f, 0.0f, 1.0f); // vec (1, 0, 0)
-	// Create 4x4 transformation matrix (translation)
-	glm::mat4 translateMatrix(1.0f);
-	translateMatrix = glm::translate(translateMatrix, glm::vec3(1.0f, 1.0f, 0.0f));
-	// Do the translation to the vector
-	vec = translateMatrix * vec; 
-	std::cout << "Transformed vector: (" << vec.x << "," << vec.y << "," << vec.z << ") " << std::endl;
-	// Debugging
-	for (int i = 0; i < 4; i++) {
-		for (int j = 0; j < 4; j++) {
-			std::cout << translateMatrix[j][i] << ",";
-		}
-		std::cout << std::endl;
-	}
+	// Enable OpenGL z-buffer depth comparisons
+	glEnable(GL_DEPTH_TEST);
 
-	// 3D setup
-	// Model: Rotate triangles to the floor
-	glm::mat4 model_matrix(1.0f);
-	model_matrix = glm::rotate(model_matrix, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	// View: Translate scene in reverse direction from camera
-	glm::mat4 view_matrix(1.0f);
-	view_matrix = glm::translate(view_matrix, glm::vec3(0.0f, 0.0f, -3.0f));
-	// Proj: 45 degree FOV, set aspect ratio, front and back clipping of view frustum 
-	glm::mat4 projection_matrix(1.0f);
-	projection_matrix = glm::perspective(glm::radians(45.0f), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
-	// Set uniforms in shader program
-	shaderProgram.setMatrix4("model", model_matrix);
-	shaderProgram.setMatrix4("view",  view_matrix);
-	shaderProgram.setMatrix4("proj",  projection_matrix);
-
-	// ----------------------------------------------------------------------------------------------------------------------------------------------
+	// -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 	// Display graphics loop
 	while (!glfwWindowShouldClose(window))
 	{
@@ -251,9 +313,11 @@ int main() {
 
 		// rendering commands section below
 		// 
-		// Clear colour
+		// Set clear colour
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
+		// Clear colour and z-buffers
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 
 		// Colour changing with time
 		float timeValue = glfwGetTime();
@@ -270,10 +334,26 @@ int main() {
 		//trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 1.0f));
 		shaderProgram.setMatrix4("transform", trans);
 
+		// 3D setup
+		// Model: Rotate triangles to the floor
+		glm::mat4 model_matrix(1.0f);
+		model_matrix = glm::translate(model_matrix, glm::vec3(0.0f, 0.0f, -0.5f));
+		model_matrix = glm::rotate(model_matrix, 2.6f* (float)sin(glfwGetTime()), glm::vec3(0.1f, 0.1f, 0.15f));
+		// View: Translate scene in reverse direction from camera
+		glm::mat4 view_matrix(1.0f);
+		view_matrix = glm::translate(view_matrix, glm::vec3(0.0f, 0.0f, -3.0f));
+		// Proj: 45 degree FOV, set aspect ratio, front and back clipping of view frustum 
+		glm::mat4 projection_matrix(1.0f);
+		projection_matrix = glm::perspective(glm::radians(45.0f), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
+		// Set uniforms in shader program
+		shaderProgram.setMatrix4("model", model_matrix);
+		shaderProgram.setMatrix4("view", view_matrix);
+		shaderProgram.setMatrix4("proj", projection_matrix);
+
 		// Bind predefined Vertex Array Object (indirectly binds its attached VBOs and texture)
 		glBindVertexArray(VAO);
 		// Draw from Element Buffer Object indices
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, 42, GL_UNSIGNED_INT, 0);
 
 		// Second matrix transformation
 		//trans = glm::mat4(1.0f); // reset to identity matrix

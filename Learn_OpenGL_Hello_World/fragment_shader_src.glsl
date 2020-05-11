@@ -14,8 +14,8 @@
 		// FragColor = vec4(uniformColour_1, uniformColour_2, uniformColour_3);
 		// FragColor = vec4(colour.x + uniformColour.x, colour.y + uniformColour.y, colour.z + uniformColour.z, 1.0f);
 		// FragColor = texture(imageTexture2, texCoordFace); // * vec4(colour.x + uniformColour.x, colour.y + uniformColour.y, colour.z + uniformColour.z, 0.8f);
+		// FragColor = mix( texture(imageTexture1, texCoordContainer), texture(imageTexture2, texCoordFace), 0.2) * vec4(colour.x + uniformColour.x, colour.y + uniformColour.y, colour.z + uniformColour.z, 0.8f);
 
-		FragColor = mix( texture(imageTexture1, texCoordContainer), texture(imageTexture2, texCoordFace), 0.2)
-				  * vec4(colour.x + uniformColour.x, colour.y + uniformColour.y, colour.z + uniformColour.z, 0.8f);
+		FragColor = vec4(colour.x + uniformColour.x, colour.y + uniformColour.y, colour.z + uniformColour.z, 0.8f);
 
 	}
