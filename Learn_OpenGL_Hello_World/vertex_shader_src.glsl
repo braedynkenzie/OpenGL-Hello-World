@@ -9,13 +9,14 @@
 	out vec2 texCoordFace;
 
 	uniform vec4 uniformColour;
+	uniform mat4 transform;
 
 	void main()
 	{
 	   colour = aVertexColour;
 	   texCoordContainer = aTextureCoordContainer;
 	   texCoordFace = aTextureCoordFace;
-	   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
+	   gl_Position = transform * vec4(aPos, 1.0f);
 
 	   // gl_Position = vec4(aPos.x + uniformColour.x - 0.5f, aPos.y - uniformColour.y + 0.5f, aPos.z + uniformColour.z, 1.0);
 	}

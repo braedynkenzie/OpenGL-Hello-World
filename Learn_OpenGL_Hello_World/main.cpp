@@ -101,7 +101,9 @@ int main() {
 
 	unsigned int indices[] = {
 		0, 1, 2, // triangle #1
-		3, 4, 5 //  triangle #2
+		3, 4, 5, // triangle #2
+		0, 2, 3, // triangle #3
+		5, 2, 3  // triangle #4
 	};
 
 	Shader shaderProgram = Shader("vertex_shader_src.glsl", "fragment_shader_src.glsl");
@@ -142,7 +144,7 @@ int main() {
 	unsigned int EBO;
 	glGenBuffers(1, &EBO);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * 12, indices, GL_STATIC_DRAW);
 	// Bind EBO to VAO as well
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 	// Unbinding
@@ -225,10 +227,6 @@ int main() {
 		std::cout << std::endl;
 	}
 
-	glm::mat4 trans(1.0f); // Init identity matrix
-	trans = glm::rotate(trans, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	trans = glm::scale(trans, glm::vec3(0.5f, 0.5f, 0.5f));
-
 	// Display graphics loop
 	while (!glfwWindowShouldClose(window))
 	{
@@ -241,17 +239,34 @@ int main() {
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		// Bind predefined Vertex Array Object (indirectly binds its attached VBOs and texture)
-		glBindVertexArray(VAO);
-		// Draw from Element Buffer Object
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
 		// Colour changing with time
 		float timeValue = glfwGetTime();
 		float redValue   = (sin(timeValue - 1) / 2.0f) + 0.5f;
 		float greenValue = (sin(timeValue    ) / 2.0f) + 0.5f;
 		float blueValue  = (sin(timeValue + 1) / 2.0f) + 0.5f;
 		shaderProgram.setFloat4("uniformColour", redValue, greenValue, blueValue, 1.0f);
+
+		// Transformation matrix to pass as uniform variable
+		glm::mat4 trans(1.0f); // Init identity matrix
+		//trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(1.0f, 0.0f, 0.0f)); // glm::radians(90.0f)
+		//trans = glm::scale(trans, glm::vec3(2.0f, 2.0f, 2.0f));
+		trans = glm::translate(trans, glm::vec3(0.5f, -0.5f, 0.0f));
+		trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
+		shaderProgram.setMatrix4("transform", trans);
+
+		// Bind predefined Vertex Array Object (indirectly binds its attached VBOs and texture)
+		glBindVertexArray(VAO);
+		// Draw from Element Buffer Object indices
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+		// Second matrix transformation
+		trans = glm::mat4(1.0f); // reset to identity matrix
+		trans = glm::translate(trans, glm::vec3(-0.5f, 0.5f, 0.0f));
+		float scaleVal = sin(glfwGetTime());
+		trans = glm::scale(trans, glm::vec3(scaleVal, scaleVal, scaleVal));
+		shaderProgram.setMatrix4("transform", trans);
+		// Draw again but with different transformation matrix
+		glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, 0);
 
 		// Check events and swap frame buffers (avoids flickering)
 		glfwSwapBuffers(window);
