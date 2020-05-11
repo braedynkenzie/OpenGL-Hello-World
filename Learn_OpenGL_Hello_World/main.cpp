@@ -13,8 +13,8 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 
 // Global variables
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+const unsigned int SCREEN_WIDTH = 800;
+const unsigned int SCREEN_HEIGHT = 600;
 
 int main() {
 	// Setup version (using OpenGL v3.3 in core-profile mode)
@@ -24,7 +24,7 @@ int main() {
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	// Create an OpenGL window using GLFW library implementation
-	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "LearnOpenGL", NULL, NULL);
 	if (window == NULL)
 	{
 		std::cout << "Failed to create GLFW window" << std::endl;
@@ -41,7 +41,7 @@ int main() {
 	}
 
 	// Give OpenGL dimensions of window
-	glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+	glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
 	// Callback function for window being resized
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
@@ -227,6 +227,22 @@ int main() {
 		std::cout << std::endl;
 	}
 
+	// 3D setup
+	// Model: Rotate triangles to the floor
+	glm::mat4 model_matrix(1.0f);
+	model_matrix = glm::rotate(model_matrix, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	// View: Translate scene in reverse direction from camera
+	glm::mat4 view_matrix(1.0f);
+	view_matrix = glm::translate(view_matrix, glm::vec3(0.0f, 0.0f, -3.0f));
+	// Proj: 45 degree FOV, set aspect ratio, front and back clipping of view frustum 
+	glm::mat4 projection_matrix(1.0f);
+	projection_matrix = glm::perspective(glm::radians(45.0f), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
+	// Set uniforms in shader program
+	shaderProgram.setMatrix4("model", model_matrix);
+	shaderProgram.setMatrix4("view",  view_matrix);
+	shaderProgram.setMatrix4("proj",  projection_matrix);
+
+	// ----------------------------------------------------------------------------------------------------------------------------------------------
 	// Display graphics loop
 	while (!glfwWindowShouldClose(window))
 	{
@@ -250,8 +266,8 @@ int main() {
 		glm::mat4 trans(1.0f); // Init identity matrix
 		//trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(1.0f, 0.0f, 0.0f)); // glm::radians(90.0f)
 		//trans = glm::scale(trans, glm::vec3(2.0f, 2.0f, 2.0f));
-		trans = glm::translate(trans, glm::vec3(0.5f, -0.5f, 0.0f));
-		trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
+		//trans = glm::translate(trans, glm::vec3(0.5f, -0.5f, 0.0f));
+		//trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 1.0f));
 		shaderProgram.setMatrix4("transform", trans);
 
 		// Bind predefined Vertex Array Object (indirectly binds its attached VBOs and texture)
@@ -260,13 +276,14 @@ int main() {
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 		// Second matrix transformation
-		trans = glm::mat4(1.0f); // reset to identity matrix
-		trans = glm::translate(trans, glm::vec3(-0.5f, 0.5f, 0.0f));
-		float scaleVal = sin(glfwGetTime());
-		trans = glm::scale(trans, glm::vec3(scaleVal, scaleVal, scaleVal));
-		shaderProgram.setMatrix4("transform", trans);
+		//trans = glm::mat4(1.0f); // reset to identity matrix
+		//trans = glm::translate(trans, glm::vec3(-0.5f, 0.5f, 0.0f));
+		//trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(1.0f, 0.5f, 0.0f));
+		//float scaleVal = sin(sin(glfwGetTime()));
+		//trans = glm::scale(trans, glm::vec3(scaleVal, scaleVal, scaleVal));
+		//shaderProgram.setMatrix4("transform", trans);
 		// Draw again but with different transformation matrix
-		glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, 0);
+		//glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, 0);
 
 		// Check events and swap frame buffers (avoids flickering)
 		glfwSwapBuffers(window);
