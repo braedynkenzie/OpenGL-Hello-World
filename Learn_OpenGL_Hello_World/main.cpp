@@ -16,6 +16,10 @@ void processInput(GLFWwindow* window);
 const unsigned int SCREEN_WIDTH = 800;
 const unsigned int SCREEN_HEIGHT = 600;
 
+glm::vec3 cameraPos   = glm::vec3(0.0f, 0.0f, 3.0f);
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f, 0.0f);
+
 int main() {
 	// Setup version (using OpenGL v3.3 in core-profile mode)
 	glfwInit();
@@ -356,7 +360,17 @@ int main() {
 		// Draw from Element Buffer Object indices
 		// glDrawElements(GL_TRIANGLES, 42, GL_UNSIGNED_INT, 0);
 
-		// 3D setup
+		// Camera setup
+		//glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
+		//glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
+		//glm::vec3 cameraDirection = glm::normalize(cameraPos - cameraTarget);
+		//glm::vec3 upDirection = glm::vec3(0.0f, 1.0f, 0.0f);
+		//glm::vec3 cameraRight = glm::normalize(glm::cross(upDirection, cameraDirection));
+		//glm::vec3 cameraUp = glm::cross(cameraDirection, cameraRight);
+		// Above vectors used to create view "LookAt" matrix from scratch
+
+
+		// 3D rendering
 		for (unsigned int i = 0; i < sizeof(cubePositions) / sizeof(glm::vec3); i++)
 		{
 			// Model: Render copies of cube with differing model matrices
@@ -367,10 +381,16 @@ int main() {
 			model_matrix = glm::rotate(model_matrix, twistSpeed*(float)(sin(glfwGetTime()) / 2.0f + 0.5f), glm::vec3(0.1f, 0.1f, 0.15f));
 			// View: Translate scene in reverse direction from camera
 			glm::mat4 view_matrix(1.0f);
-			view_matrix = glm::translate(view_matrix, glm::vec3(0.0f, 0.0f, -3.0f));
+			float radius = 20.0f;
+			float cameraXPos = sin(glfwGetTime()) * radius;
+			float cameraZPos = cos(glfwGetTime()) * radius;
+			view_matrix = glm::lookAt(glm::vec3(cameraXPos, 0.0f, cameraZPos), // camera position
+									glm::vec3(0.0f, 0.0f, 0.0f),   // camera target point
+									glm::vec3(0.0f, 1.0f, 0.0f));  // world up direction
+
 			// Proj: 45 degree FOV, set aspect ratio, front and back clipping of view frustum 
 			glm::mat4 projection_matrix(1.0f);
-			projection_matrix = glm::perspective(glm::radians(45.0f), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
+			projection_matrix = glm::perspective(glm::radians(50.0f), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 50.0f);
 			// Set uniforms in shader program
 			shaderProgram.setMatrix4("model", model_matrix);
 			shaderProgram.setMatrix4("view" , view_matrix);
