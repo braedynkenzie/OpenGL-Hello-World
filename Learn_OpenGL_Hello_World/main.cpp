@@ -301,6 +301,23 @@ int main() {
 	shaderProgram.setInt("imageTexture1", 0); 
 	shaderProgram.setInt("imageTexture2", 1); 
 
+	// Create copies of the cube at different x,y,z locations
+	glm::vec3 cubePositions[] = {
+		glm::vec3(0.0f, 0.0f, 0.0f),
+		glm::vec3(2.0f, 5.0f, -15.0f),
+		glm::vec3(-1.5f, -2.2f, -2.5f),
+		glm::vec3(-3.8f, -2.0f, -12.3f),
+		glm::vec3(-4.8f, -0.1f, -6.0f),
+		glm::vec3(-4.4f, 3.0f, -6.0f),
+		glm::vec3(2.4f, -0.4f, -3.5f),
+		glm::vec3(-1.7f, 3.0f, -7.5f),
+		glm::vec3(1.3f, -2.0f, -2.5f),
+		glm::vec3(1.5f, 2.0f, -2.5f),
+		glm::vec3(1.5f, 0.2f, -1.5f),
+		glm::vec3(-1.3f, 1.0f, -1.5f)
+	};
+
+
 	// Enable OpenGL z-buffer depth comparisons
 	glEnable(GL_DEPTH_TEST);
 
@@ -334,26 +351,33 @@ int main() {
 		//trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 1.0f));
 		shaderProgram.setMatrix4("transform", trans);
 
-		// 3D setup
-		// Model: Rotate triangles to the floor
-		glm::mat4 model_matrix(1.0f);
-		model_matrix = glm::translate(model_matrix, glm::vec3(0.0f, 0.0f, -0.5f));
-		model_matrix = glm::rotate(model_matrix, 2.6f* (float)sin(glfwGetTime()), glm::vec3(0.1f, 0.1f, 0.15f));
-		// View: Translate scene in reverse direction from camera
-		glm::mat4 view_matrix(1.0f);
-		view_matrix = glm::translate(view_matrix, glm::vec3(0.0f, 0.0f, -3.0f));
-		// Proj: 45 degree FOV, set aspect ratio, front and back clipping of view frustum 
-		glm::mat4 projection_matrix(1.0f);
-		projection_matrix = glm::perspective(glm::radians(45.0f), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
-		// Set uniforms in shader program
-		shaderProgram.setMatrix4("model", model_matrix);
-		shaderProgram.setMatrix4("view", view_matrix);
-		shaderProgram.setMatrix4("proj", projection_matrix);
-
 		// Bind predefined Vertex Array Object (indirectly binds its attached VBOs and texture)
 		glBindVertexArray(VAO);
 		// Draw from Element Buffer Object indices
-		glDrawElements(GL_TRIANGLES, 42, GL_UNSIGNED_INT, 0);
+		// glDrawElements(GL_TRIANGLES, 42, GL_UNSIGNED_INT, 0);
+
+		// 3D setup
+		for (unsigned int i = 0; i < sizeof(cubePositions) / sizeof(glm::vec3); i++)
+		{
+			// Model: Render copies of cube with differing model matrices
+			glm::mat4 model_matrix(1.0f);
+			model_matrix = glm::translate(model_matrix, glm::vec3(0.0f, 0.0f, -0.5f));
+			model_matrix = glm::translate(model_matrix, cubePositions[i] * (float)(sin(glfwGetTime()) / 2.0f + 0.5f));
+			float twistSpeed = i / 2.0f + 7.0f;
+			model_matrix = glm::rotate(model_matrix, twistSpeed*(float)(sin(glfwGetTime()) / 2.0f + 0.5f), glm::vec3(0.1f, 0.1f, 0.15f));
+			// View: Translate scene in reverse direction from camera
+			glm::mat4 view_matrix(1.0f);
+			view_matrix = glm::translate(view_matrix, glm::vec3(0.0f, 0.0f, -3.0f));
+			// Proj: 45 degree FOV, set aspect ratio, front and back clipping of view frustum 
+			glm::mat4 projection_matrix(1.0f);
+			projection_matrix = glm::perspective(glm::radians(45.0f), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
+			// Set uniforms in shader program
+			shaderProgram.setMatrix4("model", model_matrix);
+			shaderProgram.setMatrix4("view" , view_matrix);
+			shaderProgram.setMatrix4("proj" , projection_matrix);
+			glDrawElements(GL_TRIANGLES, 42, GL_UNSIGNED_INT, 0);
+		}
+		
 
 		// Second matrix transformation
 		//trans = glm::mat4(1.0f); // reset to identity matrix
