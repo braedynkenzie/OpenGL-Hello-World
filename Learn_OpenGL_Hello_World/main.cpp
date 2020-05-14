@@ -10,15 +10,26 @@
 
 // define other functions
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void processInput(GLFWwindow* window);
 
 // Global variables
-const unsigned int SCREEN_WIDTH = 800;
-const unsigned int SCREEN_HEIGHT = 600;
+const unsigned int SCREEN_WIDTH = 800*1.4;
+const unsigned int SCREEN_HEIGHT = 600*1.4;
 
 glm::vec3 cameraPos   = glm::vec3(0.0f, 0.0f, 3.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f, 0.0f);
+
+float lastCursorX = SCREEN_WIDTH/2.0f;
+float lastCursorY = SCREEN_HEIGHT/2.0f;
+float yaw   = 0.0f;
+float pitch = 0.0f;
+glm::vec3 direction;
+bool firstMouseCapture = true;
+
+float deltaTime = 0.0f; // Time to render last frame
+float lastFrame = 0.0f; // Time of last frame
 
 int main() {
 	// Setup version (using OpenGL v3.3 in core-profile mode)
@@ -46,9 +57,15 @@ int main() {
 
 	// Give OpenGL dimensions of window
 	glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+	
+	// Hide and capture mouse cursor
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	// Callback function for window being resized
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+
+	// Callback function for mouse cursor movement
+	glfwSetCursorPosCallback(window, mouse_callback);
 
 	// vertices of triangle in NDCS 
 	float vertices_old[] = {
@@ -329,6 +346,11 @@ int main() {
 	// Display graphics loop
 	while (!glfwWindowShouldClose(window))
 	{
+		// Calculate deltaTime
+		float currentFrame = glfwGetTime();
+		deltaTime = currentFrame - lastFrame;
+		lastFrame = currentFrame;
+
 		// user key input processing
 		processInput(window);
 
@@ -381,12 +403,14 @@ int main() {
 			model_matrix = glm::rotate(model_matrix, twistSpeed*(float)(sin(glfwGetTime()) / 2.0f + 0.5f), glm::vec3(0.1f, 0.1f, 0.15f));
 			// View: Translate scene in reverse direction from camera
 			glm::mat4 view_matrix(1.0f);
-			float radius = 20.0f;
-			float cameraXPos = sin(glfwGetTime()) * radius;
-			float cameraZPos = cos(glfwGetTime()) * radius;
-			view_matrix = glm::lookAt(glm::vec3(cameraXPos, 0.0f, cameraZPos), // camera position
-									glm::vec3(0.0f, 0.0f, 0.0f),   // camera target point
-									glm::vec3(0.0f, 1.0f, 0.0f));  // world up direction
+			//float radius = 20.0f;
+			//float cameraXPos = sin(glfwGetTime()) * radius;
+			//float cameraZPos = cos(glfwGetTime()) * radius;
+			//view_matrix = glm::lookAt(glm::vec3(cameraXPos, 0.0f, cameraZPos), // camera position
+			//						glm::vec3(0.0f, 0.0f, 0.0f),   // camera target point
+			//						glm::vec3(0.0f, 1.0f, 0.0f));  // world up direction
+			view_matrix = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+
 
 			// Proj: 45 degree FOV, set aspect ratio, front and back clipping of view frustum 
 			glm::mat4 projection_matrix(1.0f);
@@ -439,7 +463,57 @@ void processInput(GLFWwindow* window)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+	// Camera position movement
+	float cameraSpeed = 8.0f * deltaTime;
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+		cameraPos += cameraSpeed * cameraFront;
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+		cameraPos -= cameraSpeed * cameraFront;
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+		cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+	// Camera yaw
+	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+		cameraFront += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed/10.0f;
+	if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+		cameraFront -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed/10.0f;
+
 }
+
+void mouse_callback(GLFWwindow* window, double xpos, double ypos) 
+{
+	// Fixes first mouse cursor capture by OpenGL window
+	// TODO: figure out why the camera still jumps
+	if (firstMouseCapture)
+	{
+		lastCursorX = xpos;
+		lastCursorY = ypos;
+		firstMouseCapture = false;
+	}
+	float xOffset = xpos - lastCursorX;
+	float yOffset = lastCursorY - ypos; // reverse the y-coordinates
+	float cursorSensitivity = 0.08f;
+	xOffset *= cursorSensitivity;
+	yOffset *= cursorSensitivity;
+	yaw += xOffset;
+	pitch += yOffset;
+	if (pitch > 89.0f)
+		pitch = 89.0f;
+	if (pitch < -89.0f)
+		pitch = -89.0f;
+	lastCursorX = xpos;
+	lastCursorY = ypos;
+	glm::vec3 frontDir;
+	frontDir.x = cos(glm::radians(pitch)) * cos(glm::radians(yaw));
+	frontDir.y = sin(glm::radians(pitch));
+	frontDir.z = cos(glm::radians(pitch)) * sin(glm::radians(yaw));
+	cameraFront = glm::normalize(frontDir);
+
+
+}
+
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
