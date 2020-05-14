@@ -32,6 +32,10 @@ float pitch = 0.0f;
 glm::vec3 direction;
 bool firstMouseCapture = true;
 
+// Lighting
+glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
+
+
 float deltaTime = 0.0f; // Time to render last frame
 float lastFrame = 0.0f; // Time of last frame
 
@@ -226,18 +230,21 @@ int main() {
 		33, 34, 35,
 	};
 
-	Shader shaderProgram = Shader("vertex_shader_src.glsl", "fragment_shader_src.glsl");
+	Shader shaderProgram_original = Shader("vertex_shader_src.glsl", "fragment_shader_src.glsl");
+	Shader lightingShaderProgram = Shader("vertex_shader_lighting_src.glsl", "fragment_shader_lighting_src.glsl");
+	Shader lampShaderProgram = Shader("vertex_shader_light_src.glsl", "fragment_shader_light_src.glsl");
+
 
 	// -------------------------------------------------------------------------------------------------------------------------
 	// Generate, bind, and fill main Vertex Array Object (VAO) and Vertex Buffer Objects (VBOs)
-	unsigned int VAO, VBO_vertices, VBO_colours, VBO_containerTexCoords, VBO_faceTexCoords;
-	glGenVertexArrays(1, &VAO);
+	unsigned int VAO_cube, VBO_vertices, VBO_colours, VBO_containerTexCoords, VBO_faceTexCoords;
+	glGenVertexArrays(1, &VAO_cube);
 	glGenBuffers(1, &VBO_vertices);
 	glGenBuffers(1, &VBO_colours);
 	glGenBuffers(1, &VBO_containerTexCoords);
 	glGenBuffers(1, &VBO_faceTexCoords);
 	// Order: Bind the VAO first, then bind and set vertex buffers, and then configure vertex attributes
-	glBindVertexArray(VAO);
+	glBindVertexArray(VAO_cube);
 	// Vertices VBO
 	glBindBuffer(GL_ARRAY_BUFFER, VBO_vertices);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
@@ -267,9 +274,19 @@ int main() {
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(vertices), indices, GL_STATIC_DRAW);
 	// Bind EBO to VAO as well
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	// Unbinding
+	// Unbinding VAO and buffer object
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
+	// ##################################################################################################################################################################################
+	// Second VAO for lighting cube
+	unsigned int VAO_light;
+	glGenVertexArrays(1, &VAO_light);
+	glBindVertexArray(VAO_light);
+	// Bind to VBO containing vertices
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_vertices);
+	// Set and enable the vertex attributes pointer
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
 	// -------------------------------------------------------------------------------------------------------------------------
 
 	// Texture loading 0
@@ -326,9 +343,12 @@ int main() {
 	stbi_image_free(smilingImageData);
 
 	// Use defined and compiled vertex/fragment shaders
-	shaderProgram.use();
+	/*shaderProgram.use();
 	shaderProgram.setInt("imageTexture1", 0); 
-	shaderProgram.setInt("imageTexture2", 1); 
+	shaderProgram.setInt("imageTexture2", 1); */
+	lightingShaderProgram.use();
+	lightingShaderProgram.setFloat3("objectColor", 1.0f, 0.5f, 0.31f);
+	lightingShaderProgram.setFloat3("lightColor" , 1.0f, 1.0f, 1.0f);
 
 	// Create copies of the cube at different x,y,z locations
 	glm::vec3 cubePositions[] = {
@@ -346,7 +366,6 @@ int main() {
 		glm::vec3(-1.3f, 1.0f, -1.5f)
 	};
 
-
 	// Enable OpenGL z-buffer depth comparisons
 	glEnable(GL_DEPTH_TEST);
 
@@ -362,81 +381,72 @@ int main() {
 		// user key input processing
 		processInput(window);
 
-		// rendering commands section below
-		// 
 		// Set clear colour
-		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		// Clear colour and z-buffers
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-
 		// Colour changing with time
-		float timeValue = glfwGetTime();
+		/*float timeValue = glfwGetTime();
 		float redValue   = (sin(timeValue - 1) / 2.0f) + 0.5f;
 		float greenValue = (sin(timeValue    ) / 2.0f) + 0.5f;
 		float blueValue  = (sin(timeValue + 1) / 2.0f) + 0.5f;
-		shaderProgram.setFloat4("uniformColour", redValue, greenValue, blueValue, 1.0f);
+		shaderProgram.setFloat4("uniformColour", redValue, greenValue, blueValue, 1.0f);*/
 
-		// Transformation matrix to pass as uniform variable
-		glm::mat4 trans(1.0f); // Init identity matrix
-		//trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(1.0f, 0.0f, 0.0f)); // glm::radians(90.0f)
-		//trans = glm::scale(trans, glm::vec3(2.0f, 2.0f, 2.0f));
-		//trans = glm::translate(trans, glm::vec3(0.5f, -0.5f, 0.0f));
-		//trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 1.0f));
-		shaderProgram.setMatrix4("transform", trans);
+		// Lamp object rendering
+		lampShaderProgram.use();
+		// Model matrix: Translate and scale the light object
+		glm::mat4 model_matrix = glm::mat4(1.0f);
+		model_matrix = glm::translate(model_matrix, lightPos);
+		model_matrix = glm::scale(model_matrix, glm::vec3(0.2f));
+		// View matrix: camera
+		glm::mat4 view_matrix = camera.GetViewMatrix();
+		// Proj matrix: Zoom/Field of View (FOV), set aspect ratio, front and back clipping of view frustum 
+		glm::mat4 projection_matrix(1.0f);
+		projection_matrix = glm::perspective(glm::radians(camera.Zoom), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
+		// Set uniforms in shader program
+		lampShaderProgram.setMatrix4("model", model_matrix);
+		lampShaderProgram.setMatrix4("view" , view_matrix);
+		lampShaderProgram.setMatrix4("proj" , projection_matrix);
+		glBindVertexArray(VAO_light);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
 
-		// Bind predefined Vertex Array Object (indirectly binds its attached VBOs and texture)
-		glBindVertexArray(VAO);
-		// Draw from Element Buffer Object indices
-		// glDrawElements(GL_TRIANGLES, 42, GL_UNSIGNED_INT, 0);
+		// Cube shader
+		lightingShaderProgram.use();
+		// Set uniforms in shader program
+		// Model matrix: Translate and scale the light object
+		model_matrix = glm::mat4(1.0f);
+		lightingShaderProgram.setMatrix4("model", model_matrix);
+		// Use same view and proj matrices
+		lightingShaderProgram.setMatrix4("view", view_matrix);
+		lightingShaderProgram.setMatrix4("proj", projection_matrix);
+		glBindVertexArray(VAO_cube);
+		glDrawElements(GL_TRIANGLES, 42, GL_UNSIGNED_INT, 0);
 
-		// Camera setup
-		//glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
-		//glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
-		//glm::vec3 cameraDirection = glm::normalize(cameraPos - cameraTarget);
-		//glm::vec3 upDirection = glm::vec3(0.0f, 1.0f, 0.0f);
-		//glm::vec3 cameraRight = glm::normalize(glm::cross(upDirection, cameraDirection));
-		//glm::vec3 cameraUp = glm::cross(cameraDirection, cameraRight);
-		// Above vectors used to create view "LookAt" matrix from scratch
-
-
-		// 3D rendering
-		for (unsigned int i = 0; i < sizeof(cubePositions) / sizeof(glm::vec3); i++)
-		{
-			// Model: Render copies of cube with differing model matrices
-			glm::mat4 model_matrix(1.0f);
-			model_matrix = glm::translate(model_matrix, glm::vec3(0.0f, 0.0f, -0.5f));
-			model_matrix = glm::translate(model_matrix, cubePositions[i] * (float)(sin(glfwGetTime()) / 2.0f + 0.5f));
-			float twistSpeed = i / 2.0f + 7.0f;
-			model_matrix = glm::rotate(model_matrix, twistSpeed*(float)(sin(glfwGetTime()) / 2.0f + 0.5f), glm::vec3(0.1f, 0.1f, 0.15f));
-			// View: Translate scene in reverse direction from camera
-			glm::mat4 view_matrix = camera.GetViewMatrix();
-			//view_matrix = glm::lookAt(glm::vec3(cameraXPos, 0.0f, cameraZPos), // camera position
-			//						glm::vec3(0.0f, 0.0f, 0.0f),   // camera target point
-			//						glm::vec3(0.0f, 1.0f, 0.0f));  // world up direction
-			//view_matrix = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-
-
-			// Proj: Zoom/Field of View (FOV), set aspect ratio, front and back clipping of view frustum 
-			glm::mat4 projection_matrix(1.0f);
-			projection_matrix = glm::perspective(glm::radians(camera.Zoom), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
-			// Set uniforms in shader program
-			shaderProgram.setMatrix4("model", model_matrix);
-			shaderProgram.setMatrix4("view" , view_matrix);
-			shaderProgram.setMatrix4("proj" , projection_matrix);
-			glDrawElements(GL_TRIANGLES, 42, GL_UNSIGNED_INT, 0);
-		}
-		
-
-		// Second matrix transformation
-		//trans = glm::mat4(1.0f); // reset to identity matrix
-		//trans = glm::translate(trans, glm::vec3(-0.5f, 0.5f, 0.0f));
-		//trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(1.0f, 0.5f, 0.0f));
-		//float scaleVal = sin(sin(glfwGetTime()));
-		//trans = glm::scale(trans, glm::vec3(scaleVal, scaleVal, scaleVal));
-		//shaderProgram.setMatrix4("transform", trans);
-		// Draw again but with different transformation matrix
-		//glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, 0);
+		// Cube objects
+		//for (unsigned int i = 0; i < sizeof(cubePositions) / sizeof(glm::vec3); i++)
+		//{
+		//	// Model: Render copies of cube with differing model matrices
+		//	glm::mat4 model_matrix(1.0f);
+		//	model_matrix = glm::translate(model_matrix, glm::vec3(0.0f, 0.0f, -0.5f));
+		//	model_matrix = glm::translate(model_matrix, cubePositions[i] * (float)(sin(glfwGetTime()) / 2.0f + 0.5f));
+		//	float twistSpeed = i / 2.0f + 7.0f;
+		//	model_matrix = glm::rotate(model_matrix, twistSpeed*(float)(sin(glfwGetTime()) / 2.0f + 0.5f), glm::vec3(0.1f, 0.1f, 0.15f));
+		//	// View: Translate scene in reverse direction from camera
+		//	glm::mat4 view_matrix = camera.GetViewMatrix();
+		//	//view_matrix = glm::lookAt(glm::vec3(cameraXPos, 0.0f, cameraZPos), // camera position
+		//	//						glm::vec3(0.0f, 0.0f, 0.0f),   // camera target point
+		//	//						glm::vec3(0.0f, 1.0f, 0.0f));  // world up direction
+		//	//view_matrix = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+		//	// Proj: Zoom/Field of View (FOV), set aspect ratio, front and back clipping of view frustum 
+		//	glm::mat4 projection_matrix(1.0f);
+		//	projection_matrix = glm::perspective(glm::radians(camera.Zoom), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
+		//	// Set uniforms in shader program
+		//	lightingShaderProgram.setMatrix4("model", model_matrix);
+		//	lightingShaderProgram.setMatrix4("view" , view_matrix);
+		//	lightingShaderProgram.setMatrix4("proj" , projection_matrix);
+		//	glDrawElements(GL_TRIANGLES, 42, GL_UNSIGNED_INT, 0);
+		//}
 
 		// Check events and swap frame buffers (avoids flickering)
 		glfwSwapBuffers(window);
@@ -448,7 +458,8 @@ int main() {
 	std::cout << "Maximum number of vertex attributes supported: " << numAttributes << std::endl;
 
 	// Release GLFW resources before exiting
-	glDeleteVertexArrays(1, &VAO);
+	glDeleteVertexArrays(1, &VAO_cube);
+	glDeleteVertexArrays(1, &VAO_light);
 	glDeleteBuffers(1, &VBO_vertices);
 	glDeleteBuffers(1, &VBO_colours);
 	glDeleteBuffers(1, &VBO_containerTexCoords);
@@ -508,7 +519,6 @@ void scroll_callback(GLFWwindow* window, double xOffset, double yOffset)
 {
 	camera.ProcessMouseScroll(yOffset);
 }
-
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {

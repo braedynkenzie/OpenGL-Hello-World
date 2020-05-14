@@ -887,12 +887,12 @@
     <ClInclude Include="camera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="fragment_shader_src.glsl">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="vertex_shader_src.glsl">
       <Filter>Resource Files</Filter>
     </None>
     <None Include="glm\detail\func_common.inl">
@@ -1303,6 +1303,21 @@
     <None Include="glm\gtx\wrap.inl">
       <Filter>Header Files</Filter>
     </None>
+    <None Include="vertex_shader_src.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="vertex_shader_lighting_src.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="fragment_shader_lighting_src.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="fragment_shader_light_src.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="vertex_shader_light_src.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="wooden_container_texture.jpg">
@@ -1311,5 +1326,10 @@
     <Image Include="smiling_texture.jpg">
       <Filter>Resource Files</Filter>
     </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Learn_OpenGL_Hello_World.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>
