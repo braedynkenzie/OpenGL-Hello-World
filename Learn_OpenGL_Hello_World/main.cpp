@@ -395,15 +395,10 @@ int main() {
 	}
 	stbi_image_free(smilingImageData);
 
-	// Use defined and compiled vertex/fragment shaders
+	// Set textures in shader
 	/*shaderProgram.use();
 	shaderProgram.setInt("imageTexture1", 0); 
 	shaderProgram.setInt("imageTexture2", 1); */
-	lightingShaderProgram.use();
-	lightingShaderProgram.setFloat3("objectColor", 1.0f, 0.5f, 0.31f);
-	lightingShaderProgram.setFloat3("lightColor" , 1.0f, 1.0f, 1.0f);
-	lightingShaderProgram.setFloat3("lightPos", lightPos.x, lightPos.y, lightPos.z);
-
 
 	// Create copies of the cube at different x,y,z locations
 	glm::vec3 cubePositions[] = {
@@ -450,6 +445,10 @@ int main() {
 
 		// Lamp object rendering
 		lampShaderProgram.use();
+		glm::vec3 lightColor;
+		lightColor.x = sin(glfwGetTime() * 1.0f) / 2.0f + 0.7f;
+		lightColor.y = sin(glfwGetTime() * 0.5f) / 2.0f + 0.7f;
+		lightColor.z = sin(glfwGetTime() * 0.4f) / 2.0f + 0.7f;
 		// Model matrix: Translate and scale the light object
 		glm::mat4 model_matrix = glm::mat4(1.0f);
 		model_matrix = glm::translate(model_matrix, lightPos);
@@ -460,23 +459,41 @@ int main() {
 		glm::mat4 projection_matrix(1.0f);
 		projection_matrix = glm::perspective(glm::radians(camera.Zoom), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
 		// Set uniforms in shader program
+		// Model, view, projection matrices
 		lampShaderProgram.setMatrix4("model", model_matrix);
 		lampShaderProgram.setMatrix4("view" , view_matrix);
 		lampShaderProgram.setMatrix4("proj" , projection_matrix);
+		// Light colour uniform
+		lampShaderProgram.setVec3("lightColor", lightColor);
 		glBindVertexArray(VAO_light);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
 		// Cube shader
 		lightingShaderProgram.use();
 		// Set uniforms in shader program
-		// Model matrix: Translate and scale the light object
+		// Model matrix for world-centered cube
 		model_matrix = glm::mat4(1.0f);
 		lightingShaderProgram.setMatrix4("model", model_matrix);
-		// Use same view and proj matrices
+		// Use same view and proj matrices as for lamp (above)
 		lightingShaderProgram.setMatrix4("view", view_matrix);
 		lightingShaderProgram.setMatrix4("proj", projection_matrix);
+		lightingShaderProgram.setVec3("viewPos", camera.Position.x, camera.Position.y, camera.Position.z);
+		// Set material struct properties
+		lightingShaderProgram.setVec3("material.ambient", 1.0f, 0.5f, 0.31f);
+		lightingShaderProgram.setVec3("material.diffuse", 1.0f, 0.5f, 0.31f);
+		lightingShaderProgram.setVec3("material.specular", 0.5f, 0.5f, 0.5f);
+		lightingShaderProgram.setFloat("material.shininess", 128.0f);
+		// Set light (intensity) struct properties
+		glm::vec3 diffuseColor = lightColor * glm::vec3(0.5f);
+		glm::vec3 ambientColor = diffuseColor * glm::vec3(0.5f);
+		lightingShaderProgram.setVec3("light.ambient", ambientColor);
+		lightingShaderProgram.setVec3("light.diffuse", diffuseColor);
+		lightingShaderProgram.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
+		// Light position
+		lightingShaderProgram.setVec3("lightPos", lightPos);
+
 		glBindVertexArray(VAO_cube);
-		// glDrawElements(GL_TRIANGLES, 42, GL_UNSIGNED_INT, 0);
+		//glDrawElements(GL_TRIANGLES, 42, GL_UNSIGNED_INT, 0);
 
 		// Cube objects
 		for (unsigned int i = 0; i < sizeof(cubePositions) / sizeof(glm::vec3); i++)
@@ -496,7 +513,6 @@ int main() {
 			lightingShaderProgram.setMatrix4("model", model_matrix);
 			lightingShaderProgram.setMatrix4("view" , view_matrix);
 			lightingShaderProgram.setMatrix4("proj" , projection_matrix);
-			lightingShaderProgram.setFloat3("viewPos", camera.Position.x, camera.Position.y, camera.Position.z);
 
 			glDrawElements(GL_TRIANGLES, 42, GL_UNSIGNED_INT, 0);
 		}
