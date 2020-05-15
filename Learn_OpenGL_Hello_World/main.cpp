@@ -101,10 +101,10 @@ int main() {
 
 		0.5f, 0.5f, 1.0f, // Cube front right
 		0.5f, -0.5f, 1.0f,
-		-0.5f, -0.5f, 1.0f, 
+		-0.5f, -0.5f, 1.0f,
 		0.5f, 0.5f, 1.0f, // Cube front left
-		-0.5f, 0.5f, 1.0f, 
-		-0.5f, -0.5f, 1.0f, 
+		-0.5f, 0.5f, 1.0f,
+		-0.5f, -0.5f, 1.0f,
 
 		0.5f, 0.5f, 0.0f, // Cube right right
 		0.5f, -0.5f, 0.0f,
@@ -133,6 +133,50 @@ int main() {
 		0.5f, -0.5f, 0.0f, // Cube bottom left
 		-0.5f, -0.5f, 0.0f,
 		-0.5f, -0.5f, 1.0f,
+	};
+
+	float surfaceNormals[] = {
+		0.0f, 0.0f, -1.0f, // Cube back face
+		0.0f, 0.0f, -1.0f,
+		0.0f, 0.0f, -1.0f,
+		0.0f, 0.0f, -1.0f,
+		0.0f, 0.0f, -1.0f,
+		0.0f, 0.0f, -1.0f,
+
+		0.0f, 0.0f, 1.0f, // Cube front face
+		0.0f, 0.0f, 1.0f,
+		0.0f, 0.0f, 1.0f,
+		0.0f, 0.0f, 1.0f,
+		0.0f, 0.0f, 1.0f,
+		0.0f, 0.0f, 1.0f,
+
+		1.0f, 0.0f, 0.0f, // Cube right face
+		1.0f, 0.0f, 0.0f,
+		1.0f, 0.0f, 0.0f,
+		1.0f, 0.0f, 0.0f,
+		1.0f, 0.0f, 0.0f,
+		1.0f, 0.0f, 0.0f,
+
+		-1.0f, 0.0f, 0.0f, // Cube left face
+		-1.0f, 0.0f, 0.0f,
+		-1.0f, 0.0f, 0.0f,
+		-1.0f, 0.0f, 0.0f,
+		-1.0f, 0.0f, 0.0f,
+		-1.0f, 0.0f, 0.0f,
+
+		0.0f, 1.0f, 0.0f, // Cube top face
+		0.0f, 1.0f, 0.0f,
+		0.0f, 1.0f, 0.0f,
+		0.0f, 1.0f, 0.0f,
+		0.0f, 1.0f, 0.0f,
+		0.0f, 1.0f, 0.0f,
+
+		0.0f, -1.0f, 0.0f, // Cube top face
+		0.0f, -1.0f, 0.0f,
+		0.0f, -1.0f, 0.0f,
+		0.0f, -1.0f, 0.0f,
+		0.0f, -1.0f, 0.0f,
+		0.0f, -1.0f, 0.0f,
 	};
 
 	float colours[] = {
@@ -237,14 +281,19 @@ int main() {
 
 	// -------------------------------------------------------------------------------------------------------------------------
 	// Generate, bind, and fill main Vertex Array Object (VAO) and Vertex Buffer Objects (VBOs)
-	unsigned int VAO_cube, VBO_vertices, VBO_colours, VBO_containerTexCoords, VBO_faceTexCoords;
+	unsigned int VAO_cube, VBO_vertices, VBO_normals, VBO_colours, VBO_containerTexCoords, VBO_faceTexCoords;
 	glGenVertexArrays(1, &VAO_cube);
 	glGenBuffers(1, &VBO_vertices);
+	glGenBuffers(1, &VBO_normals);
 	glGenBuffers(1, &VBO_colours);
 	glGenBuffers(1, &VBO_containerTexCoords);
 	glGenBuffers(1, &VBO_faceTexCoords);
 	// Order: Bind the VAO first, then bind and set vertex buffers, and then configure vertex attributes
 	glBindVertexArray(VAO_cube);
+	// Surface normals VBO
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_normals);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(surfaceNormals), surfaceNormals, GL_STATIC_DRAW);
+	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	// Vertices VBO
 	glBindBuffer(GL_ARRAY_BUFFER, VBO_vertices);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
@@ -263,10 +312,11 @@ int main() {
 	glBufferData(GL_ARRAY_BUFFER, sizeof(textureCoordsFace), textureCoordsFace, GL_STATIC_DRAW);
 	glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
 	// Enable attributes for VAO
-	glEnableVertexAttribArray(0);
-	glEnableVertexAttribArray(1);
-	glEnableVertexAttribArray(2);
-	glEnableVertexAttribArray(3);
+	glEnableVertexAttribArray(0); // Vertices
+	glEnableVertexAttribArray(1); // Colours
+	glEnableVertexAttribArray(2); // Container texture coords
+	glEnableVertexAttribArray(3); // Face texture coords
+	glEnableVertexAttribArray(4); // normals
 	// Create Element Buffer Object
 	unsigned int EBO;
 	glGenBuffers(1, &EBO);
@@ -277,7 +327,7 @@ int main() {
 	// Unbinding VAO and buffer object
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
-	// ##################################################################################################################################################################################
+
 	// Second VAO for lighting cube
 	unsigned int VAO_light;
 	glGenVertexArrays(1, &VAO_light);
@@ -287,6 +337,9 @@ int main() {
 	// Set and enable the vertex attributes pointer
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
+	// Unbinding VAO and buffer object
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
 	// -------------------------------------------------------------------------------------------------------------------------
 
 	// Texture loading 0
@@ -349,6 +402,8 @@ int main() {
 	lightingShaderProgram.use();
 	lightingShaderProgram.setFloat3("objectColor", 1.0f, 0.5f, 0.31f);
 	lightingShaderProgram.setFloat3("lightColor" , 1.0f, 1.0f, 1.0f);
+	lightingShaderProgram.setFloat3("lightPos", lightPos.x, lightPos.y, lightPos.z);
+
 
 	// Create copies of the cube at different x,y,z locations
 	glm::vec3 cubePositions[] = {
@@ -421,32 +476,30 @@ int main() {
 		lightingShaderProgram.setMatrix4("view", view_matrix);
 		lightingShaderProgram.setMatrix4("proj", projection_matrix);
 		glBindVertexArray(VAO_cube);
-		glDrawElements(GL_TRIANGLES, 42, GL_UNSIGNED_INT, 0);
+		// glDrawElements(GL_TRIANGLES, 42, GL_UNSIGNED_INT, 0);
 
 		// Cube objects
-		//for (unsigned int i = 0; i < sizeof(cubePositions) / sizeof(glm::vec3); i++)
-		//{
-		//	// Model: Render copies of cube with differing model matrices
-		//	glm::mat4 model_matrix(1.0f);
-		//	model_matrix = glm::translate(model_matrix, glm::vec3(0.0f, 0.0f, -0.5f));
-		//	model_matrix = glm::translate(model_matrix, cubePositions[i] * (float)(sin(glfwGetTime()) / 2.0f + 0.5f));
-		//	float twistSpeed = i / 2.0f + 7.0f;
-		//	model_matrix = glm::rotate(model_matrix, twistSpeed*(float)(sin(glfwGetTime()) / 2.0f + 0.5f), glm::vec3(0.1f, 0.1f, 0.15f));
-		//	// View: Translate scene in reverse direction from camera
-		//	glm::mat4 view_matrix = camera.GetViewMatrix();
-		//	//view_matrix = glm::lookAt(glm::vec3(cameraXPos, 0.0f, cameraZPos), // camera position
-		//	//						glm::vec3(0.0f, 0.0f, 0.0f),   // camera target point
-		//	//						glm::vec3(0.0f, 1.0f, 0.0f));  // world up direction
-		//	//view_matrix = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-		//	// Proj: Zoom/Field of View (FOV), set aspect ratio, front and back clipping of view frustum 
-		//	glm::mat4 projection_matrix(1.0f);
-		//	projection_matrix = glm::perspective(glm::radians(camera.Zoom), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
-		//	// Set uniforms in shader program
-		//	lightingShaderProgram.setMatrix4("model", model_matrix);
-		//	lightingShaderProgram.setMatrix4("view" , view_matrix);
-		//	lightingShaderProgram.setMatrix4("proj" , projection_matrix);
-		//	glDrawElements(GL_TRIANGLES, 42, GL_UNSIGNED_INT, 0);
-		//}
+		for (unsigned int i = 0; i < sizeof(cubePositions) / sizeof(glm::vec3); i++)
+		{
+			// Model: Render copies of cube with differing model matrices
+			glm::mat4 model_matrix(1.0f);
+			model_matrix = glm::translate(model_matrix, glm::vec3(0.0f, 0.0f, -0.5f));
+			model_matrix = glm::translate(model_matrix, cubePositions[i] * (float)(sin(glfwGetTime()) / 2.0f + 0.5f));
+			float twistSpeed = i / 2.0f + 7.0f;
+			model_matrix = glm::rotate(model_matrix, twistSpeed*(float)(sin(glfwGetTime()) / 2.0f + 0.5f), glm::vec3(0.1f, 0.1f, 0.15f));
+			// View: Translate scene in reverse direction from camera
+			glm::mat4 view_matrix = camera.GetViewMatrix();
+			// Proj: Zoom/Field of View (FOV), set aspect ratio, front and back clipping of view frustum 
+			glm::mat4 projection_matrix(1.0f);
+			projection_matrix = glm::perspective(glm::radians(camera.Zoom), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
+			// Set uniforms in shader program
+			lightingShaderProgram.setMatrix4("model", model_matrix);
+			lightingShaderProgram.setMatrix4("view" , view_matrix);
+			lightingShaderProgram.setMatrix4("proj" , projection_matrix);
+			lightingShaderProgram.setFloat3("viewPos", camera.Position.x, camera.Position.y, camera.Position.z);
+
+			glDrawElements(GL_TRIANGLES, 42, GL_UNSIGNED_INT, 0);
+		}
 
 		// Check events and swap frame buffers (avoids flickering)
 		glfwSwapBuffers(window);
