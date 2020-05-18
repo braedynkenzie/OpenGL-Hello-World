@@ -1,6 +1,7 @@
 #version 330 core
 	in vec3 Normal;
 	in vec3 FragPos;
+	in vec2 TexCoords;
 
 	out vec4 FragColor;
 
@@ -8,8 +9,11 @@
 	uniform vec3 viewPos;
 
 	struct Material {
-		vec3 ambient;
-		vec3 diffuse;
+		// Ambient not necessary when using a diffuse map
+		// vec3 ambient;
+		// Replace vec3 diffuse with sampler2D type
+		// vec3 diffuse;
+		sampler2D diffuse;
 		vec3 specular;
 		float shininess;
 	};
@@ -29,13 +33,12 @@ void main() {
 	// Includes ambient, diffuse, specular lighting components
 	//
 	// Ambient
-	float ambientStrength = 0.2;
-	vec3 ambient = material.ambient * light.ambient;
+	vec3 ambient = light.ambient * vec3(texture(material.diffuse, TexCoords));
 	// Diffuse
 	vec3 norm = normalize(Normal);
 	vec3 lightDir = normalize(lightPos - FragPos);
 	float diff = max(0.0, dot(norm, lightDir));
-	vec3 diffuse = (diff * material.diffuse) * light.diffuse;
+	vec3 diffuse = light.diffuse * diff * vec3(texture(material.diffuse, TexCoords));
 	// Specular
 	float shininess = 128;
 	vec3 viewDir = normalize(viewPos - FragPos);

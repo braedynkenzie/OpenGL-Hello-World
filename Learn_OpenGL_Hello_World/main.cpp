@@ -14,6 +14,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xOffset, double yOffset);
 void processInput(GLFWwindow* window);
+unsigned int loadTexture(const char* path);
 
 // Global variables
 const unsigned int SCREEN_WIDTH = 800*1.4;
@@ -31,6 +32,7 @@ float yaw   = 0.0f;
 float pitch = 0.0f;
 glm::vec3 direction;
 bool firstMouseCapture = true;
+bool movingLight = false;
 
 // Lighting
 glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
@@ -232,7 +234,47 @@ int main() {
 	};
 
 	float textureCoordsContainer[] = {
+		1.0f, 1.0f, // back
+		0.0f, 1.0f,
+		0.0f, 0.0f,
+
 		1.0f, 1.0f,
+		1.0f, 0.0f,
+		0.0f, 0.0f,
+
+		1.0f, 1.0f, // front
+		0.0f, 1.0f,
+		0.0f, 0.0f,
+
+		1.0f, 1.0f,
+		1.0f, 0.0f,
+		0.0f, 0.0f,
+
+		1.0f, 1.0f, // right
+		0.0f, 1.0f,
+		0.0f, 0.0f,
+
+		1.0f, 1.0f,
+		1.0f, 0.0f,
+		0.0f, 0.0f,
+
+		1.0f, 1.0f, // left
+		0.0f, 1.0f,
+		0.0f, 0.0f,
+
+		1.0f, 1.0f,
+		1.0f, 0.0f,
+		0.0f, 0.0f,
+
+		1.0f, 1.0f, // top
+		0.0f, 1.0f,
+		0.0f, 0.0f,
+
+		1.0f, 1.0f,
+		1.0f, 0.0f,
+		0.0f, 0.0f,
+
+		1.0f, 1.0f, // bottom
 		0.0f, 1.0f,
 		0.0f, 0.0f,
 
@@ -281,19 +323,17 @@ int main() {
 
 	// -------------------------------------------------------------------------------------------------------------------------
 	// Generate, bind, and fill main Vertex Array Object (VAO) and Vertex Buffer Objects (VBOs)
-	unsigned int VAO_cube, VBO_vertices, VBO_normals, VBO_colours, VBO_containerTexCoords, VBO_faceTexCoords;
+	unsigned int VAO_cube, VBO_vertices, VBO_normals, VBO_colours, 
+		VBO_containerTexCoords, VBO_faceTexCoords, VBO_metalBorderTexCoords;
 	glGenVertexArrays(1, &VAO_cube);
 	glGenBuffers(1, &VBO_vertices);
 	glGenBuffers(1, &VBO_normals);
 	glGenBuffers(1, &VBO_colours);
 	glGenBuffers(1, &VBO_containerTexCoords);
 	glGenBuffers(1, &VBO_faceTexCoords);
+	glGenBuffers(1, &VBO_metalBorderTexCoords);
 	// Order: Bind the VAO first, then bind and set vertex buffers, and then configure vertex attributes
 	glBindVertexArray(VAO_cube);
-	// Surface normals VBO
-	glBindBuffer(GL_ARRAY_BUFFER, VBO_normals);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(surfaceNormals), surfaceNormals, GL_STATIC_DRAW);
-	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	// Vertices VBO
 	glBindBuffer(GL_ARRAY_BUFFER, VBO_vertices);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
@@ -311,12 +351,21 @@ int main() {
 	glBindBuffer(GL_ARRAY_BUFFER, VBO_faceTexCoords);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(textureCoordsFace), textureCoordsFace, GL_STATIC_DRAW);
 	glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+	// Metal border container texture coords
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_metalBorderTexCoords);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(textureCoordsContainer), textureCoordsContainer, GL_STATIC_DRAW);
+	glVertexAttribPointer(4, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+	// Surface normals VBO
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_normals);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(surfaceNormals), surfaceNormals, GL_STATIC_DRAW);
+	glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	// Enable attributes for VAO
 	glEnableVertexAttribArray(0); // Vertices
 	glEnableVertexAttribArray(1); // Colours
 	glEnableVertexAttribArray(2); // Container texture coords
 	glEnableVertexAttribArray(3); // Face texture coords
-	glEnableVertexAttribArray(4); // normals
+	glEnableVertexAttribArray(4); // Metal border container tex coords
+	glEnableVertexAttribArray(5); // Normals
 	// Create Element Buffer Object
 	unsigned int EBO;
 	glGenBuffers(1, &EBO);
@@ -342,63 +391,16 @@ int main() {
 	glBindVertexArray(0);
 	// -------------------------------------------------------------------------------------------------------------------------
 
-	// Texture loading 0
+	// Texture loading -- metal border container
 	// Generate an OpenGL texture and add data from the loaded .jpg image
-	glActiveTexture(GL_TEXTURE0); // activate the texture unit, then bind the texture
-	unsigned int woodenTexture;
-	glGenTextures(1, &woodenTexture);
-	glBindTexture(GL_TEXTURE_2D, woodenTexture);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); // texture magnification doesn't use mipmaps
-	// Load texture as bytes (chars)
-	int texWidth, texHeight, numChannels;
-	unsigned char* containerImageData = stbi_load("wooden_container_texture.jpg", &texWidth, &texHeight, &numChannels, 0);
-	if (containerImageData)
-	{
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texWidth, texHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, containerImageData);
-		// OpenGL function to generate a mipmap with the given texture
-		glGenerateMipmap(GL_TEXTURE_2D);
-	}
-	else
-	{
-		std::cout << "ERROR: Failed to load the container texture image" << std::endl;
-		return -1;
-	}
-	stbi_image_free(containerImageData);
-
-	// Texture loading 1
-	// Generate an OpenGL texture and add data from the loaded .jpg image
-	glActiveTexture(GL_TEXTURE1); // activate the texture unit, then bind the texture
-	unsigned int smilingTexture;
-	glGenTextures(1, &smilingTexture);
-	glBindTexture(GL_TEXTURE_2D, smilingTexture);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); // texture magnification doesn't use mipmaps
-	// Load texture as bytes (chars)
-	int texWidth2, texHeight2, numChannels2;
-	stbi_set_flip_vertically_on_load(true);
-	unsigned char* smilingImageData = stbi_load("smiling_texture.jpg", &texWidth2, &texHeight2, &numChannels2, 0);
-	if (smilingImageData)
-	{
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texWidth2, texHeight2, 0, GL_RGB, GL_UNSIGNED_BYTE, smilingImageData);
-		// OpenGL function to generate a mipmap with the given texture
-		glGenerateMipmap(GL_TEXTURE_2D);
-	}
-	else
-	{
-		std::cout << "ERROR: Failed to load the smiling texture image" << std::endl;
-		return -1;
-	}
-	stbi_image_free(smilingImageData);
+	unsigned int metalBorderTexture = loadTexture("metal_border_container_texture.png");
 
 	// Set textures in shader
 	/*shaderProgram.use();
 	shaderProgram.setInt("imageTexture1", 0); 
 	shaderProgram.setInt("imageTexture2", 1); */
+	lightingShaderProgram.use();
+	lightingShaderProgram.setInt("metalBorderTexture", 2);
 
 	// Create copies of the cube at different x,y,z locations
 	glm::vec3 cubePositions[] = {
@@ -443,6 +445,10 @@ int main() {
 		float blueValue  = (sin(timeValue + 1) / 2.0f) + 0.5f;
 		shaderProgram.setFloat4("uniformColour", redValue, greenValue, blueValue, 1.0f);*/
 
+		// bind diffuse map texture
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, metalBorderTexture);
+
 		// Lamp object rendering
 		lampShaderProgram.use();
 		glm::vec3 lightColor;
@@ -451,7 +457,12 @@ int main() {
 		lightColor.z = sin(glfwGetTime() * 0.4f) / 2.0f + 0.7f;
 		// Model matrix: Translate and scale the light object
 		glm::mat4 model_matrix = glm::mat4(1.0f);
-		model_matrix = glm::translate(model_matrix, lightPos);
+		glm::vec3 movingLightPos = lightPos;
+		if (movingLight) {
+			movingLightPos.x *= (float)(sin(glfwGetTime()) * 3.0f);
+			movingLightPos.y *= (float)(cos(glfwGetTime()) * 3.0f);
+		}
+		model_matrix = glm::translate(model_matrix, movingLightPos);
 		model_matrix = glm::scale(model_matrix, glm::vec3(0.2f));
 		// View matrix: camera
 		glm::mat4 view_matrix = camera.GetViewMatrix();
@@ -464,7 +475,7 @@ int main() {
 		lampShaderProgram.setMatrix4("view" , view_matrix);
 		lampShaderProgram.setMatrix4("proj" , projection_matrix);
 		// Light colour uniform
-		lampShaderProgram.setVec3("lightColor", lightColor);
+		lampShaderProgram.setVec3("lampColor", lightColor * 0.8f);
 		glBindVertexArray(VAO_light);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
@@ -479,23 +490,24 @@ int main() {
 		lightingShaderProgram.setMatrix4("proj", projection_matrix);
 		lightingShaderProgram.setVec3("viewPos", camera.Position.x, camera.Position.y, camera.Position.z);
 		// Set material struct properties
-		lightingShaderProgram.setVec3("material.ambient", 1.0f, 0.5f, 0.31f);
-		lightingShaderProgram.setVec3("material.diffuse", 1.0f, 0.5f, 0.31f);
 		lightingShaderProgram.setVec3("material.specular", 0.5f, 0.5f, 0.5f);
-		lightingShaderProgram.setFloat("material.shininess", 128.0f);
+		lightingShaderProgram.setFloat("material.shininess", 16.0f);
 		// Set light (intensity) struct properties
-		glm::vec3 diffuseColor = lightColor * glm::vec3(0.5f);
-		glm::vec3 ambientColor = diffuseColor * glm::vec3(0.5f);
+		glm::vec3 diffuseIntensity = glm::vec3(0.9f);
+		glm::vec3 ambientIntensity = glm::vec3(0.4f);
+		glm::vec3 specularIntensity = glm::vec3(0.8f);
+		glm::vec3 diffuseColor = lightColor * diffuseIntensity;
+		glm::vec3 ambientColor = diffuseColor * ambientIntensity;
 		lightingShaderProgram.setVec3("light.ambient", ambientColor);
 		lightingShaderProgram.setVec3("light.diffuse", diffuseColor);
-		lightingShaderProgram.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
+		lightingShaderProgram.setVec3("light.specular", specularIntensity);
 		// Light position
-		lightingShaderProgram.setVec3("lightPos", lightPos);
+		lightingShaderProgram.setVec3("lightPos", movingLightPos);
 
 		glBindVertexArray(VAO_cube);
 		//glDrawElements(GL_TRIANGLES, 42, GL_UNSIGNED_INT, 0);
 
-		// Cube objects
+		// Moving cube objects
 		for (unsigned int i = 0; i < sizeof(cubePositions) / sizeof(glm::vec3); i++)
 		{
 			// Model: Render copies of cube with differing model matrices
@@ -522,9 +534,10 @@ int main() {
 		glfwPollEvents();
 	}
 
-	int numAttributes;
+	// Print max number of attribute pointers supported on system
+	/*int numAttributes;
 	glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &numAttributes);
-	std::cout << "Maximum number of vertex attributes supported: " << numAttributes << std::endl;
+	std::cout << "Maximum number of vertex attributes supported: " << numAttributes << std::endl;*/
 
 	// Release GLFW resources before exiting
 	glDeleteVertexArrays(1, &VAO_cube);
@@ -533,6 +546,7 @@ int main() {
 	glDeleteBuffers(1, &VBO_colours);
 	glDeleteBuffers(1, &VBO_containerTexCoords);
 	glDeleteBuffers(1, &VBO_faceTexCoords);
+	glDeleteBuffers(1, &VBO_metalBorderTexCoords);
 	glDeleteBuffers(1, &EBO);
 	glfwTerminate();
 	return 0;
@@ -558,6 +572,12 @@ void processInput(GLFWwindow* window)
 		camera.ProcessKeyboard(LEFT, deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 		camera.ProcessKeyboard(RIGHT, deltaTime);
+
+	// Light position movement
+	if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS)
+		movingLight = false;
+	if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS)
+		movingLight = true;
 
 }
 
@@ -592,4 +612,41 @@ void scroll_callback(GLFWwindow* window, double xOffset, double yOffset)
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
 	glViewport(0, 0, width, height);
+}
+
+unsigned int loadTexture(char const* path)
+{
+	unsigned int textureID;
+	glGenTextures(1, &textureID);
+
+	int width, height, nrComponents;
+	unsigned char* data = stbi_load(path, &width, &height, &nrComponents, 0);
+	if (data)
+	{
+		GLenum format;
+		if (nrComponents == 1)
+			format = GL_RED;
+		else if (nrComponents == 3)
+			format = GL_RGB;
+		else if (nrComponents == 4)
+			format = GL_RGBA;
+
+		glBindTexture(GL_TEXTURE_2D, textureID);
+		glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		stbi_image_free(data);
+	}
+	else
+	{
+		std::cout << "Texture failed to load at path: " << path << std::endl;
+		stbi_image_free(data);
+	}
+
+	return textureID;
 }

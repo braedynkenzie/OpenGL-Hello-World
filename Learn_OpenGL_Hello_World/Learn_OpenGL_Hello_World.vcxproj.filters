@@ -19,6 +19,12 @@
     <Filter Include="Source Files\project\src">
       <UniqueIdentifier>{7d270923-bcd5-429c-acee-3c8f1608d90f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files\Shaders">
+      <UniqueIdentifier>{462a6128-e4a1-4738-af99-8a6639097f7f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\Textures">
+      <UniqueIdentifier>{2da99c06-3efb-4f7f-b424-97f3d7cab537}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -892,9 +898,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="fragment_shader_src.glsl">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="glm\detail\func_common.inl">
       <Filter>Header Files</Filter>
     </None>
@@ -1303,28 +1306,34 @@
     <None Include="glm\gtx\wrap.inl">
       <Filter>Header Files</Filter>
     </None>
-    <None Include="vertex_shader_src.glsl">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="vertex_shader_lighting_src.glsl">
-      <Filter>Resource Files</Filter>
+    <None Include="fragment_shader_light_src.glsl">
+      <Filter>Resource Files\Shaders</Filter>
     </None>
     <None Include="fragment_shader_lighting_src.glsl">
-      <Filter>Resource Files</Filter>
+      <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="fragment_shader_light_src.glsl">
-      <Filter>Resource Files</Filter>
+    <None Include="fragment_shader_src.glsl">
+      <Filter>Resource Files\Shaders</Filter>
     </None>
     <None Include="vertex_shader_light_src.glsl">
-      <Filter>Resource Files</Filter>
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="vertex_shader_lighting_src.glsl">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
+    <None Include="vertex_shader_src.glsl">
+      <Filter>Resource Files\Shaders</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="wooden_container_texture.jpg">
-      <Filter>Resource Files</Filter>
-    </Image>
     <Image Include="smiling_texture.jpg">
-      <Filter>Resource Files</Filter>
+      <Filter>Resource Files\Textures</Filter>
+    </Image>
+    <Image Include="wooden_container_texture.jpg">
+      <Filter>Resource Files\Textures</Filter>
+    </Image>
+    <Image Include="metal_border_container_texture.png">
+      <Filter>Resource Files\Textures</Filter>
     </Image>
   </ItemGroup>
   <ItemGroup>
