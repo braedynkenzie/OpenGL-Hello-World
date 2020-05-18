@@ -72,22 +72,38 @@ void main() {
 	vec3 specular = (spec * material.specular) * light.specular;
 	// Attenuation computation
 	float lightDistance = length(light.position - FragPos);
-	float attenuation = 1.0 / (light.constant + light.linear * lightDistance + light.quadratic * (lightDistance * lightDistance));
+	float attenuation = 2.0 / (light.constant + light.linear * lightDistance + light.quadratic * (lightDistance * lightDistance));
 	ambient *= attenuation;
 	diffuse *= attenuation;
 	specular *= attenuation;
 
 	// Flashlight
 	// 
+	vec3 fl_ambient = vec3(0.0f);
+	vec3 fl_diffuse = vec3(0.0f);
+	vec3 fl_specular = vec3(0.0f);
 	// Compare light angle to cutOff
 	if(flashlight.on) {
 		vec3 flashlightDir = normalize(flashlight.position - FragPos);
 		float theta = dot(flashlightDir, normalize(-flashlight.direction)); 
 		if(theta > flashlight.cutOff) // inside the flashlight range
 		{
-			// testing
-			// ambient += vec3(0.2f,0.2f,0.2f);
-			ambient *= 3.2f;
+			// flashlight ambient
+			fl_ambient = flashlight.ambient * vec3(texture(material.diffuse, TexCoords));
+			// flashlight diffuse 
+			float fl_diff = max(0.0, dot(norm, flashlightDir));
+			fl_diffuse = flashlight.diffuse * fl_diff * vec3(texture(material.diffuse, TexCoords));
+			// flashlight specular 
+			float fl_shininess = 16;
+			vec3 fl_reflectDir = reflect(-flashlightDir, norm);
+			float fl_spec = pow(max(dot(viewDir, fl_reflectDir), 0.0), material.shininess);
+			fl_specular = (fl_spec * material.specular) * flashlight.specular;
+			// Flashlight attenuation
+			float flashlightDistance = length(flashlight.position - FragPos);
+			float fl_attenuation = 2.6 / (flashlight.constant + flashlight.linear * flashlightDistance + flashlight.quadratic * (flashlightDistance * flashlightDistance));
+			fl_ambient *= fl_attenuation;
+			fl_diffuse *= fl_attenuation;
+			fl_specular *= fl_attenuation;
 		} 
 		else // outside the flashlight range
 		{
@@ -96,9 +112,9 @@ void main() {
 		}
 	}
 
-
 	// Combine
-	vec3 result = ambient + diffuse + specular;
+	vec3 result = ambient  + diffuse + specular + fl_ambient + fl_diffuse + fl_specular;
+	// vec3 result =  fl_ambient + fl_diffuse + fl_specular;
 	FragColor = vec4(result, 1.0);
 
 }

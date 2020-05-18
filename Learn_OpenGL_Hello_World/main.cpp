@@ -12,6 +12,7 @@
 // define other functions
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 void scroll_callback(GLFWwindow* window, double xOffset, double yOffset);
 void processInput(GLFWwindow* window);
 unsigned int loadTexture(const char* path);
@@ -79,6 +80,9 @@ int main() {
 
 	// Callback function for scrolling zoom
 	glfwSetScrollCallback(window, scroll_callback);
+
+	// Callback function for mouse buttons
+	glfwSetMouseButtonCallback(window, mouse_button_callback);
 
 
 	// vertices of triangle in NDCS 
@@ -433,8 +437,14 @@ int main() {
 		// user key input processing
 		processInput(window);
 
+		// Lamp point light colour
+		glm::vec3 lightColor;
+		lightColor.x = sin(glfwGetTime() * 1.0f) / 2.0f + 0.7f;
+		lightColor.y = sin(glfwGetTime() * 0.5f) / 2.0f + 0.7f;
+		lightColor.z = sin(glfwGetTime() * 0.4f) / 2.0f + 0.7f;
+
 		// Set clear colour
-		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		glClearColor(lightColor.x / 10.0f, lightColor.y / 10.0f, lightColor.z / 10.0f, 1.0f);
 		// Clear colour and z-buffers
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -451,10 +461,6 @@ int main() {
 
 		// Lamp object rendering
 		lampShaderProgram.use();
-		glm::vec3 lightColor;
-		lightColor.x = sin(glfwGetTime() * 1.0f) / 2.0f + 0.7f;
-		lightColor.y = sin(glfwGetTime() * 0.5f) / 2.0f + 0.7f;
-		lightColor.z = sin(glfwGetTime() * 0.4f) / 2.0f + 0.7f;
 		// Model matrix: Translate and scale the light object
 		glm::mat4 model_matrix = glm::mat4(1.0f);
 		glm::vec3 movingLightPos = lightPos;
@@ -509,10 +515,16 @@ int main() {
 		lightingShaderProgram.setVec3("light.position", movingLightPos);
 
 		// Flashlight properties
+		glm::vec3 flashlightColour = glm::vec3(0.7f);
+		glm::vec3 fl_diffuseIntensity = glm::vec3(1.6f);
+		glm::vec3 fl_ambientIntensity = glm::vec3(0.2f);
+		glm::vec3 fl_specularIntensity = glm::vec3(0.4f);
+		glm::vec3 fl_diffuseColor = flashlightColour * fl_diffuseIntensity;
+		glm::vec3 fl_ambientColor = fl_diffuseColor * fl_ambientIntensity;
 		lightingShaderProgram.setBool("flashlight.on", flashlightOn);
-		lightingShaderProgram.setVec3("flashlight.ambient", ambientColor);
-		lightingShaderProgram.setVec3("flashlight.diffuse", diffuseColor);
-		lightingShaderProgram.setVec3("flashlight.specular", specularIntensity);
+		lightingShaderProgram.setVec3("flashlight.ambient", fl_ambientColor);
+		lightingShaderProgram.setVec3("flashlight.diffuse", fl_diffuseColor);
+		lightingShaderProgram.setVec3("flashlight.specular", fl_specularIntensity);
 		// Flashlight attenuation properties
 		lightingShaderProgram.setFloat("flashlight.constant", 1.0f);
 		lightingShaderProgram.setFloat("flashlight.linear", 0.09f);
@@ -611,7 +623,6 @@ void processInput(GLFWwindow* window)
 void mouse_callback(GLFWwindow* window, double xpos, double ypos) 
 {
 	// Fixes first mouse cursor capture by OpenGL window
-	// TODO: figure out why the camera still jumps
 	if (firstMouseCapture)
 	{
 		lastCursorX = xpos;
@@ -635,6 +646,15 @@ void scroll_callback(GLFWwindow* window, double xOffset, double yOffset)
 {
 	camera.ProcessMouseScroll(yOffset);
 }
+
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) 
+{
+	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+		flashlightOn = true;
+	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)
+		flashlightOn = false;
+}
+
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
