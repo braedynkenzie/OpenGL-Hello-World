@@ -5,7 +5,6 @@
 
 	out vec4 FragColor;
 
-	uniform vec3 lightPos;
 	uniform vec3 viewPos;
 
 	struct Material {
@@ -33,8 +32,28 @@
 	};
 	uniform Light light;
 
+	struct SpotLight {
+		bool on;
+		vec3 position;
+		vec3 direction;
+
+		vec3 ambient;
+		vec3 diffuse;
+		vec3 specular;
+
+		float constant;
+		float linear;
+		float quadratic;
+
+		// Angle of spotlight
+		float cutOff;
+	};
+	uniform SpotLight flashlight;
+
 void main() {
 
+	// Point light
+	//
 	// Phong model implementation
 	// Includes ambient, diffuse, specular lighting components
 	//
@@ -42,7 +61,7 @@ void main() {
 	vec3 ambient = light.ambient * vec3(texture(material.diffuse, TexCoords));
 	// Diffuse
 	vec3 norm = normalize(Normal);
-	vec3 lightDir = normalize(lightPos - FragPos);
+	vec3 lightDir = normalize(light.position - FragPos);
 	float diff = max(0.0, dot(norm, lightDir));
 	vec3 diffuse = light.diffuse * diff * vec3(texture(material.diffuse, TexCoords));
 	// Specular
@@ -57,6 +76,27 @@ void main() {
 	ambient *= attenuation;
 	diffuse *= attenuation;
 	specular *= attenuation;
+
+	// Flashlight
+	// 
+	// Compare light angle to cutOff
+	if(flashlight.on) {
+		vec3 flashlightDir = normalize(flashlight.position - FragPos);
+		float theta = dot(flashlightDir, normalize(-flashlight.direction)); 
+		if(theta > flashlight.cutOff) // inside the flashlight range
+		{
+			// testing
+			// ambient += vec3(0.2f,0.2f,0.2f);
+			ambient *= 3.2f;
+		} 
+		else // outside the flashlight range
+		{
+			// TODO
+			// color = vec4(light.ambient * vec3(texture(material.diffuse, TexCoords)), 1.0);
+		}
+	}
+
+
 	// Combine
 	vec3 result = ambient + diffuse + specular;
 	FragColor = vec4(result, 1.0);

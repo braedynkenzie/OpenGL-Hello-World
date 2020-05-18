@@ -36,7 +36,7 @@ bool movingLight = false;
 
 // Lighting
 glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
-
+bool flashlightOn = false;
 
 float deltaTime = 0.0f; // Time to render last frame
 float lastFrame = 0.0f; // Time of last frame
@@ -506,7 +506,24 @@ int main() {
 		lightingShaderProgram.setFloat("light.linear", 0.09f);
 		lightingShaderProgram.setFloat("light.quadratic", 0.032f);
 		// Light position
-		lightingShaderProgram.setVec3("lightPos", movingLightPos);
+		lightingShaderProgram.setVec3("light.position", movingLightPos);
+
+		// Flashlight properties
+		lightingShaderProgram.setBool("flashlight.on", flashlightOn);
+		lightingShaderProgram.setVec3("flashlight.ambient", ambientColor);
+		lightingShaderProgram.setVec3("flashlight.diffuse", diffuseColor);
+		lightingShaderProgram.setVec3("flashlight.specular", specularIntensity);
+		// Flashlight attenuation properties
+		lightingShaderProgram.setFloat("flashlight.constant", 1.0f);
+		lightingShaderProgram.setFloat("flashlight.linear", 0.09f);
+		lightingShaderProgram.setFloat("flashlight.quadratic", 0.032f);
+		// Flashlight position and direction
+		lightingShaderProgram.setVec3("flashlight.position", camera.Position);
+		lightingShaderProgram.setVec3("flashlight.direction", camera.Front);
+		// Flashlight cutOff angle
+		lightingShaderProgram.setFloat("flashlight.cutOff", glm::cos(glm::radians(12.5f)));
+
+
 
 		glBindVertexArray(VAO_cube);
 		//glDrawElements(GL_TRIANGLES, 42, GL_UNSIGNED_INT, 0);
@@ -579,9 +596,15 @@ void processInput(GLFWwindow* window)
 
 	// Light position movement
 	if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS)
-		movingLight = false;
-	if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS)
 		movingLight = true;
+	if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS)
+		movingLight = false;
+
+	// Flashight on/off
+	if (glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS)
+		flashlightOn = true;
+	if (glfwGetKey(window, GLFW_KEY_6) == GLFW_PRESS)
+		flashlightOn = false;
 
 }
 
