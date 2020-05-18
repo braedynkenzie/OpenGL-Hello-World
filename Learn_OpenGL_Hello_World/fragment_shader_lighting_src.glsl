@@ -47,6 +47,7 @@
 
 		// Angle of spotlight
 		float cutOff;
+		float outerCutOff;
 	};
 	uniform SpotLight flashlight;
 
@@ -85,31 +86,29 @@ void main() {
 	// Compare light angle to cutOff
 	if(flashlight.on) {
 		vec3 flashlightDir = normalize(flashlight.position - FragPos);
-		float theta = dot(flashlightDir, normalize(-flashlight.direction)); 
-		if(theta > flashlight.cutOff) // inside the flashlight range
-		{
-			// flashlight ambient
-			fl_ambient = flashlight.ambient * vec3(texture(material.diffuse, TexCoords));
-			// flashlight diffuse 
-			float fl_diff = max(0.0, dot(norm, flashlightDir));
-			fl_diffuse = flashlight.diffuse * fl_diff * vec3(texture(material.diffuse, TexCoords));
-			// flashlight specular 
-			float fl_shininess = 16;
-			vec3 fl_reflectDir = reflect(-flashlightDir, norm);
-			float fl_spec = pow(max(dot(viewDir, fl_reflectDir), 0.0), material.shininess);
-			fl_specular = (fl_spec * material.specular) * flashlight.specular;
-			// Flashlight attenuation
-			float flashlightDistance = length(flashlight.position - FragPos);
-			float fl_attenuation = 2.6 / (flashlight.constant + flashlight.linear * flashlightDistance + flashlight.quadratic * (flashlightDistance * flashlightDistance));
-			fl_ambient *= fl_attenuation;
-			fl_diffuse *= fl_attenuation;
-			fl_specular *= fl_attenuation;
-		} 
-		else // outside the flashlight range
-		{
-			// TODO
-			// color = vec4(light.ambient * vec3(texture(material.diffuse, TexCoords)), 1.0);
-		}
+		// flashlight ambient
+		fl_ambient = flashlight.ambient * vec3(texture(material.diffuse, TexCoords));
+		// flashlight diffuse 
+		float fl_diff = max(0.0, dot(norm, flashlightDir));
+		fl_diffuse = flashlight.diffuse * fl_diff * vec3(texture(material.diffuse, TexCoords));
+		// flashlight specular 
+		float fl_shininess = 16;
+		vec3 fl_reflectDir = reflect(-flashlightDir, norm);
+		float fl_spec = pow(max(dot(viewDir, fl_reflectDir), 0.0), material.shininess);
+		fl_specular = (fl_spec * material.specular) * flashlight.specular;
+		// Flashlight attenuation
+		float flashlightDistance = length(flashlight.position - FragPos);
+		float fl_attenuation = 2.6 / (flashlight.constant + flashlight.linear * flashlightDistance + flashlight.quadratic * (flashlightDistance * flashlightDistance));
+		fl_ambient *= fl_attenuation;
+		fl_diffuse *= fl_attenuation;
+		fl_specular *= fl_attenuation;
+		// Smooth flashlight edge transition
+		float theta = dot(flashlightDir, normalize(-flashlight.direction));
+		float epsilon = flashlight.cutOff - flashlight.outerCutOff;
+		float fl_intensity = clamp((theta - flashlight.outerCutOff) / epsilon, 0.0, 1.0);
+		fl_ambient *= fl_intensity;
+		fl_diffuse *= fl_intensity;
+		fl_specular *= fl_intensity;
 	}
 
 	// Combine

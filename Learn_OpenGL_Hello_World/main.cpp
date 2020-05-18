@@ -533,7 +533,9 @@ int main() {
 		lightingShaderProgram.setVec3("flashlight.position", camera.Position);
 		lightingShaderProgram.setVec3("flashlight.direction", camera.Front);
 		// Flashlight cutOff angle
-		lightingShaderProgram.setFloat("flashlight.cutOff", glm::cos(glm::radians(12.5f)));
+		lightingShaderProgram.setFloat("flashlight.cutOff", glm::cos(glm::radians(5.0f)));
+		lightingShaderProgram.setFloat("flashlight.outerCutOff", glm::cos(glm::radians(20.0f)));
+		
 
 
 
