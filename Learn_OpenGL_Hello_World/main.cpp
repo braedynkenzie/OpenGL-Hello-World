@@ -501,6 +501,10 @@ int main() {
 		lightingShaderProgram.setVec3("light.ambient", ambientColor);
 		lightingShaderProgram.setVec3("light.diffuse", diffuseColor);
 		lightingShaderProgram.setVec3("light.specular", specularIntensity);
+		// Light attenuation properties
+		lightingShaderProgram.setFloat("light.constant", 1.0f);
+		lightingShaderProgram.setFloat("light.linear", 0.09f);
+		lightingShaderProgram.setFloat("light.quadratic", 0.032f);
 		// Light position
 		lightingShaderProgram.setVec3("lightPos", movingLightPos);
 
