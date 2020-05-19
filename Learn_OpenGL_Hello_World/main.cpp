@@ -41,6 +41,8 @@ bool flashlightOn = false;
 
 float deltaTime = 0.0f; // Time to render last frame
 float lastFrame = 0.0f; // Time of last frame
+float startTime = glfwGetTime();
+float timeSinceLastPrintf = 0.0f;
 
 int main() {
 	// Setup version (using OpenGL v3.3 in core-profile mode)
@@ -433,6 +435,7 @@ int main() {
 		float currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
+		timeSinceLastPrintf += deltaTime;
 
 		// user key input processing
 		processInput(window);
@@ -498,22 +501,23 @@ int main() {
 		// Set material struct properties
 		lightingShaderProgram.setVec3("material.specular", 0.5f, 0.5f, 0.5f);
 		lightingShaderProgram.setFloat("material.shininess", 16.0f);
-		// Set light (intensity) struct properties
-		glm::vec3 diffuseIntensity = glm::vec3(0.9f);
-		glm::vec3 ambientIntensity = glm::vec3(0.4f);
-		glm::vec3 specularIntensity = glm::vec3(0.8f);
-		glm::vec3 diffuseColor = lightColor * diffuseIntensity;
-		glm::vec3 ambientColor = diffuseColor * ambientIntensity;
-		lightingShaderProgram.setVec3("light.ambient", ambientColor);
-		lightingShaderProgram.setVec3("light.diffuse", diffuseColor);
-		lightingShaderProgram.setVec3("light.specular", specularIntensity);
-		// Light attenuation properties
-		lightingShaderProgram.setFloat("light.constant", 1.0f);
-		lightingShaderProgram.setFloat("light.linear", 0.09f);
-		lightingShaderProgram.setFloat("light.quadratic", 0.032f);
-		// Light position
-		lightingShaderProgram.setVec3("light.position", movingLightPos);
-
+		//
+		// Point light properties
+		glm::vec3 pl_diffuseIntensity = glm::vec3(0.9f);
+		glm::vec3 pl_ambientIntensity = glm::vec3(0.4f);
+		glm::vec3 pl_specularIntensity = glm::vec3(0.8f);
+		glm::vec3 pl_diffuseColor = lightColor * pl_diffuseIntensity;
+		glm::vec3 pl_ambientColor = pl_diffuseColor * pl_ambientIntensity;
+		lightingShaderProgram.setVec3("pointLights[0].ambient", pl_ambientColor);
+		lightingShaderProgram.setVec3("pointLights[0].diffuse", pl_diffuseColor);
+		lightingShaderProgram.setVec3("pointLights[0].specular", pl_specularIntensity);
+		// Point light attenuation properties
+		lightingShaderProgram.setFloat("pointLights[0].constant", 1.0f);
+		lightingShaderProgram.setFloat("pointLights[0].linear", 0.09f);
+		lightingShaderProgram.setFloat("pointLights[0].quadratic", 0.032f);
+		// Point light position
+		lightingShaderProgram.setVec3("pointLights[0].position", movingLightPos);
+		//
 		// Flashlight properties
 		glm::vec3 flashlightColour = glm::vec3(0.7f);
 		glm::vec3 fl_diffuseIntensity = glm::vec3(1.6f);
@@ -535,9 +539,19 @@ int main() {
 		// Flashlight cutOff angle
 		lightingShaderProgram.setFloat("flashlight.cutOff", glm::cos(glm::radians(5.0f)));
 		lightingShaderProgram.setFloat("flashlight.outerCutOff", glm::cos(glm::radians(20.0f)));
-		
-
-
+		//
+		// Directional light properties
+		glm::vec3 dl_lightColour = glm::vec3(1.0f);
+		glm::vec3 dl_diffuseIntensity = glm::vec3(1.2f);
+		glm::vec3 dl_ambientIntensity = glm::vec3(0.0f);
+		glm::vec3 dl_specularIntensity = glm::vec3(0.1f);
+		glm::vec3 dl_diffuseColor = dl_lightColour * dl_diffuseIntensity;
+		glm::vec3 dl_ambientColor = dl_diffuseColor * dl_ambientIntensity;
+		lightingShaderProgram.setVec3("dirLights[0].ambient", dl_ambientColor);
+		lightingShaderProgram.setVec3("dirLights[0].diffuse", dl_diffuseColor);
+		lightingShaderProgram.setVec3("dirLights[0].specular", dl_specularIntensity);
+		// Directional light direction
+		lightingShaderProgram.setVec3("dirLights[0].direction", glm::vec3(1.0f, -0.5f, -1.0f));
 
 		glBindVertexArray(VAO_cube);
 		//glDrawElements(GL_TRIANGLES, 42, GL_UNSIGNED_INT, 0);
@@ -562,6 +576,14 @@ int main() {
 			lightingShaderProgram.setMatrix4("proj" , projection_matrix);
 
 			glDrawElements(GL_TRIANGLES, 42, GL_UNSIGNED_INT, 0);
+		}
+
+		// Print FPS
+		float fps = 1.0f / deltaTime;
+		if (timeSinceLastPrintf > 1.0) {
+			printf("%f seconds per frame\n", deltaTime);
+			printf("%f fps =  1 / secs per frame \n\n", fps);
+			timeSinceLastPrintf = 0.0f;
 		}
 
 		// Check events and swap frame buffers (avoids flickering)
