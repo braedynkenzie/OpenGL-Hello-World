@@ -3,6 +3,8 @@
 #include <iostream>
 #include <Shader.h>
 #include <camera.h>
+#include <Model.h>
+#include <Mesh.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 #include <glm/glm.hpp>
@@ -18,8 +20,8 @@ void processInput(GLFWwindow* window);
 unsigned int loadTexture(const char* path);
 
 // Global variables
-const unsigned int SCREEN_WIDTH = 800*1.4;
-const unsigned int SCREEN_HEIGHT = 600*1.4;
+const unsigned int SCREEN_WIDTH = 800 * 1.4;
+const unsigned int SCREEN_HEIGHT = 600 * 1.4;
 
 glm::vec3 cameraPos   = glm::vec3(0.0f, 0.0f, 3.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
@@ -424,6 +426,10 @@ int main() {
 		glm::vec3(-1.3f, 1.0f, -1.5f)
 	};
 
+	// load models
+	// -----------
+	//Model backpackModel = Model((char*)"resources/models/backpack/backpack.obj");
+
 	// Enable OpenGL z-buffer depth comparisons
 	glEnable(GL_DEPTH_TEST);
 
@@ -542,8 +548,8 @@ int main() {
 		//
 		// Directional light properties
 		glm::vec3 dl_lightColour = glm::vec3(1.0f);
-		glm::vec3 dl_diffuseIntensity = glm::vec3(1.2f);
-		glm::vec3 dl_ambientIntensity = glm::vec3(0.0f);
+		glm::vec3 dl_diffuseIntensity = glm::vec3(1.0f);
+		glm::vec3 dl_ambientIntensity = glm::vec3(0.4f);
 		glm::vec3 dl_specularIntensity = glm::vec3(0.1f);
 		glm::vec3 dl_diffuseColor = dl_lightColour * dl_diffuseIntensity;
 		glm::vec3 dl_ambientColor = dl_diffuseColor * dl_ambientIntensity;

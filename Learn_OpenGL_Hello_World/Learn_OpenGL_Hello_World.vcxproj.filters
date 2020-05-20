@@ -25,6 +25,12 @@
     <Filter Include="Resource Files\Textures">
       <UniqueIdentifier>{2da99c06-3efb-4f7f-b424-97f3d7cab537}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files\Models">
+      <UniqueIdentifier>{4da84944-5318-40cb-a223-1f59979682b1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\Models\backpack">
+      <UniqueIdentifier>{ea4d4bb5-6256-4587-adf8-33e74c66678b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -896,6 +902,12 @@
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Mesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Model.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="glm\detail\func_common.inl">
@@ -1338,7 +1350,7 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Learn_OpenGL_Hello_World.rc">
-      <Filter>Resource Files</Filter>
+      <Filter>Resource Files\Models\backpack</Filter>
     </ResourceCompile>
   </ItemGroup>
 </Project>
