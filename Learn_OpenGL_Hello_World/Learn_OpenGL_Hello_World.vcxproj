@@ -74,7 +74,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <LibraryPath>C:\Users\Braedyn Kenzie\Desktop\OpenGL\libs;C:\Users\Braedyn Kenzie\Desktop\OpenGL\includes;$(LibraryPath)</LibraryPath>
+    <LibraryPath>C:\Users\Braedyn Kenzie\Desktop\OpenGL\libs;$(LibraryPath)</LibraryPath>
     <IncludePath>C:\Users\Braedyn Kenzie\Desktop\Learn OpenGL\OpenGL-Hello-World\Learn_OpenGL_Hello_World;C:\Users\Braedyn Kenzie\Desktop\OpenGL\includes;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -83,6 +83,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>C:\Users\Braedyn Kenzie\Desktop\Learn OpenGL\OpenGL-Hello-World\Learn_OpenGL_Hello_World;C:\Users\Braedyn Kenzie\Desktop\OpenGL\includes;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\Braedyn Kenzie\Desktop\OpenGL\libs;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -106,8 +107,9 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>glfw3.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;opengl32.lib;assimp-vc142-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
+      <AdditionalLibraryDirectories>C:\Users\Braedyn Kenzie\Desktop\Learn OpenGL\assimp-5.0.1\build\code\Debug;C:\Users\Braedyn Kenzie\Desktop\OpenGL\libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -140,6 +142,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>glfw3.lib;opengl32.lib;assimp-vc142-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

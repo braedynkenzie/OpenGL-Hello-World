@@ -88,7 +88,6 @@ int main() {
 	// Callback function for mouse buttons
 	glfwSetMouseButtonCallback(window, mouse_button_callback);
 
-
 	// vertices of triangle in NDCS 
 	float vertices_old[] = {
 		// first triangle
@@ -428,7 +427,7 @@ int main() {
 
 	// load models
 	// -----------
-	//Model backpackModel = Model((char*)"resources/models/backpack/backpack.obj");
+	Model backpackModel = Model((char*)"models/backpack/backpack.obj");
 
 	// Enable OpenGL z-buffer depth comparisons
 	glEnable(GL_DEPTH_TEST);
@@ -458,11 +457,11 @@ int main() {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		// Colour changing with time
-		/*float timeValue = glfwGetTime();
+		float timeValue = glfwGetTime();
 		float redValue   = (sin(timeValue - 1) / 2.0f) + 0.5f;
 		float greenValue = (sin(timeValue    ) / 2.0f) + 0.5f;
 		float blueValue  = (sin(timeValue + 1) / 2.0f) + 0.5f;
-		shaderProgram.setFloat4("uniformColour", redValue, greenValue, blueValue, 1.0f);*/
+		//shaderProgram.setFloat4("uniformColour", redValue, greenValue, blueValue, 1.0f);
 
 		// bind diffuse map texture
 		glActiveTexture(GL_TEXTURE2);
@@ -560,29 +559,48 @@ int main() {
 		lightingShaderProgram.setVec3("dirLights[0].direction", glm::vec3(1.0f, -0.5f, -1.0f));
 
 		glBindVertexArray(VAO_cube);
-		//glDrawElements(GL_TRIANGLES, 42, GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, 42, GL_UNSIGNED_INT, 0);
 
-		// Moving cube objects
-		for (unsigned int i = 0; i < sizeof(cubePositions) / sizeof(glm::vec3); i++)
-		{
-			// Model: Render copies of cube with differing model matrices
-			glm::mat4 model_matrix(1.0f);
-			model_matrix = glm::translate(model_matrix, glm::vec3(0.0f, 0.0f, -0.5f));
-			model_matrix = glm::translate(model_matrix, cubePositions[i] * (float)(sin(glfwGetTime()) / 2.0f + 0.5f));
-			float twistSpeed = i / 2.0f + 7.0f;
-			model_matrix = glm::rotate(model_matrix, twistSpeed*(float)(sin(glfwGetTime()) / 2.0f + 0.5f), glm::vec3(0.1f, 0.1f, 0.15f));
-			// View: Translate scene in reverse direction from camera
-			glm::mat4 view_matrix = camera.GetViewMatrix();
-			// Proj: Zoom/Field of View (FOV), set aspect ratio, front and back clipping of view frustum 
-			glm::mat4 projection_matrix(1.0f);
-			projection_matrix = glm::perspective(glm::radians(camera.Zoom), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
-			// Set uniforms in shader program
-			lightingShaderProgram.setMatrix4("model", model_matrix);
-			lightingShaderProgram.setMatrix4("view" , view_matrix);
-			lightingShaderProgram.setMatrix4("proj" , projection_matrix);
+		//// Moving cube objects
+		//for (unsigned int i = 0; i < sizeof(cubePositions) / sizeof(glm::vec3); i++)
+		//{
+		//	// Model: Render copies of cube with differing model matrices
+		//	glm::mat4 model_matrix(1.0f);
+		//	model_matrix = glm::translate(model_matrix, glm::vec3(0.0f, 0.0f, -0.5f));
+		//	model_matrix = glm::translate(model_matrix, cubePositions[i] * (float)(sin(glfwGetTime()) / 2.0f + 0.5f));
+		//	float twistSpeed = i / 2.0f + 7.0f;
+		//	model_matrix = glm::rotate(model_matrix, twistSpeed*(float)(sin(glfwGetTime()) / 2.0f + 0.5f), glm::vec3(0.1f, 0.1f, 0.15f));
+		//	// View: Translate scene in reverse direction from camera
+		//	glm::mat4 view_matrix = camera.GetViewMatrix();
+		//	// Proj: Zoom/Field of View (FOV), set aspect ratio, front and back clipping of view frustum 
+		//	glm::mat4 projection_matrix(1.0f);
+		//	projection_matrix = glm::perspective(glm::radians(camera.Zoom), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
+		//	// Set uniforms in shader program
+		//	lightingShaderProgram.setMatrix4("model", model_matrix);
+		//	lightingShaderProgram.setMatrix4("view" , view_matrix);
+		//	lightingShaderProgram.setMatrix4("proj" , projection_matrix);
 
-			glDrawElements(GL_TRIANGLES, 42, GL_UNSIGNED_INT, 0);
-		}
+		//	glDrawElements(GL_TRIANGLES, 42, GL_UNSIGNED_INT, 0);
+		//}
+
+
+		//#####################################################################################################################################################################3333
+		//// don't forget to enable shader before setting uniforms
+		//lampShaderProgram.use();
+
+		//// view/projection transformations
+		//glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
+		//glm::mat4 view = camera.GetViewMatrix();
+		//lampShaderProgram.setMatrix4("projection", projection);
+		//lampShaderProgram.setMatrix4("view", view);
+
+		//// render the loaded model
+		//glm::mat4 model = glm::mat4(1.0f);
+		//model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
+		//model = glm::scale(model, glm::vec3(3.0f, 3.0f, 3.0f));	// it's a bit too big for our scene, so scale it down
+		//lampShaderProgram.setMatrix4("model", model);
+		//backpackModel.Draw(lampShaderProgram);
+		//#####################################################################################################################################################################3333
 
 		// Print FPS
 		float fps = 1.0f / deltaTime;

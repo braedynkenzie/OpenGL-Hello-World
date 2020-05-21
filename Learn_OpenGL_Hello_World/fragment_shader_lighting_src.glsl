@@ -72,22 +72,22 @@ void main() {
 	//
 	vec3 norm = normalize(Normal);
 	vec3 viewDir = normalize(viewPos - FragPos);
-	vec3 output = vec3(0.0f);
+	vec3 result = vec3(0.0f);
 
 	// Directional lighting
 	for(int i = 0; i < NUM_DIR_LIGHTS; i++)
-		output += CalcDirLight(dirLights[i], norm, viewDir);
+		result += CalcDirLight(dirLights[i], norm, viewDir);
 
 	// Point lights
 	for(int i = 0; i < NUM_POINT_LIGHTS; i++)
-		output += CalcPointLight(pointLights[i], norm, FragPos, viewDir);
+		result += CalcPointLight(pointLights[i], norm, FragPos, viewDir);
 
 	// Spot light (flashlight)
-	output += CalcSpotLight(flashlight, norm, FragPos, viewDir);
+	result += CalcSpotLight(flashlight, norm, FragPos, viewDir);
 
 	// Combine
-	//vec3 output = ambient  + diffuse + specular + fl_ambient + fl_diffuse + fl_specular
-	FragColor = vec4(output, 1.0);
+	//vec3 result = ambient  + diffuse + specular + fl_ambient + fl_diffuse + fl_specular
+	FragColor = vec4(result, 1.0);
 }
 
 vec3 CalcPointLight(PointLight pointLight, vec3 normal, vec3 fragPos, vec3 viewDir)
