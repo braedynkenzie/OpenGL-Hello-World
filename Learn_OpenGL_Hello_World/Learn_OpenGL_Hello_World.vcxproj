@@ -443,6 +443,7 @@
   <ItemGroup>
     <None Include="fragment_shader_lighting_src.glsl" />
     <None Include="fragment_shader_light_src.glsl" />
+    <None Include="fragment_shader_model_src.glsl" />
     <None Include="fragment_shader_src.glsl" />
     <None Include="glm\detail\func_common.inl" />
     <None Include="glm\detail\func_common_simd.inl" />
@@ -582,15 +583,13 @@
     <None Include="glm\gtx\wrap.inl" />
     <None Include="vertex_shader_lighting_src.glsl" />
     <None Include="vertex_shader_light_src.glsl" />
+    <None Include="vertex_shader_model_src.glsl" />
     <None Include="vertex_shader_src.glsl" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="metal_border_container_texture.png" />
     <Image Include="smiling_texture.jpg" />
     <Image Include="wooden_container_texture.jpg" />
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="Learn_OpenGL_Hello_World.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

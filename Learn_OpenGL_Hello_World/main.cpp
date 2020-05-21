@@ -325,8 +325,8 @@ int main() {
 
 	Shader shaderProgram_original = Shader("vertex_shader_src.glsl", "fragment_shader_src.glsl");
 	Shader lightingShaderProgram = Shader("vertex_shader_lighting_src.glsl", "fragment_shader_lighting_src.glsl");
-	Shader lampShaderProgram = Shader("vertex_shader_light_src.glsl", "fragment_shader_light_src.glsl");
-
+	Shader lampShaderProgram = Shader("vertex_shader_light_src.glsl", "fragment_shader_light_src.glsl");	
+	Shader modelShaderProgram = Shader("vertex_shader_model_src.glsl", "fragment_shader_model_src.glsl");
 
 	// -------------------------------------------------------------------------------------------------------------------------
 	// Generate, bind, and fill main Vertex Array Object (VAO) and Vertex Buffer Objects (VBOs)
@@ -427,6 +427,7 @@ int main() {
 
 	// load models
 	// -----------
+	modelShaderProgram.use();
 	Model backpackModel = Model((char*)"models/backpack/backpack.obj");
 
 	// Enable OpenGL z-buffer depth comparisons
@@ -559,7 +560,7 @@ int main() {
 		lightingShaderProgram.setVec3("dirLights[0].direction", glm::vec3(1.0f, -0.5f, -1.0f));
 
 		glBindVertexArray(VAO_cube);
-		glDrawElements(GL_TRIANGLES, 42, GL_UNSIGNED_INT, 0);
+		//glDrawElements(GL_TRIANGLES, 42, GL_UNSIGNED_INT, 0);
 
 		//// Moving cube objects
 		//for (unsigned int i = 0; i < sizeof(cubePositions) / sizeof(glm::vec3); i++)
@@ -585,21 +586,60 @@ int main() {
 
 
 		//#####################################################################################################################################################################3333
-		//// don't forget to enable shader before setting uniforms
-		//lampShaderProgram.use();
+		// don't forget to enable shader before setting uniforms
+		modelShaderProgram.use();
 
-		//// view/projection transformations
-		//glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
-		//glm::mat4 view = camera.GetViewMatrix();
-		//lampShaderProgram.setMatrix4("projection", projection);
-		//lampShaderProgram.setMatrix4("view", view);
+		// view/projection transformations
+		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
+		glm::mat4 view = camera.GetViewMatrix();
+		modelShaderProgram.setMatrix4("proj", projection);
+		modelShaderProgram.setMatrix4("view", view);
 
-		//// render the loaded model
-		//glm::mat4 model = glm::mat4(1.0f);
-		//model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
-		//model = glm::scale(model, glm::vec3(3.0f, 3.0f, 3.0f));	// it's a bit too big for our scene, so scale it down
-		//lampShaderProgram.setMatrix4("model", model);
-		//backpackModel.Draw(lampShaderProgram);
+		// render the loaded model
+		glm::mat4 model = glm::mat4(1.0f);
+		model = glm::translate(model, glm::vec3(0.0f, 0.0f, 1.4f));
+		model = glm::scale(model, glm::vec3(0.5f));	
+		modelShaderProgram.setMatrix4("model", model);
+		modelShaderProgram.setVec3("viewPos", camera.Position.x, camera.Position.y, camera.Position.z);
+		// Set material struct properties
+		modelShaderProgram.setVec3("material.specular", 0.5f, 0.5f, 0.5f);
+		modelShaderProgram.setFloat("material.shininess", 16.0f);
+		//
+		// Point light properties
+		modelShaderProgram.setVec3("pointLights[0].ambient", pl_ambientColor);
+		modelShaderProgram.setVec3("pointLights[0].diffuse", pl_diffuseColor);
+		modelShaderProgram.setVec3("pointLights[0].specular", pl_specularIntensity);
+		// Point light attenuation properties
+		modelShaderProgram.setFloat("pointLights[0].constant", 1.0f);
+		modelShaderProgram.setFloat("pointLights[0].linear", 0.09f);
+		modelShaderProgram.setFloat("pointLights[0].quadratic", 0.032f);
+		// Point light position
+		modelShaderProgram.setVec3("pointLights[0].position", movingLightPos);
+		//
+		// Flashlight properties
+		modelShaderProgram.setBool("flashlight.on", flashlightOn);
+		modelShaderProgram.setVec3("flashlight.ambient", fl_ambientColor);
+		modelShaderProgram.setVec3("flashlight.diffuse", fl_diffuseColor);
+		modelShaderProgram.setVec3("flashlight.specular", fl_specularIntensity);
+		// Flashlight attenuation properties
+		modelShaderProgram.setFloat("flashlight.constant", 1.0f);
+		modelShaderProgram.setFloat("flashlight.linear", 0.09f);
+		modelShaderProgram.setFloat("flashlight.quadratic", 0.032f);
+		// Flashlight position and direction
+		modelShaderProgram.setVec3("flashlight.position", camera.Position);
+		modelShaderProgram.setVec3("flashlight.direction", camera.Front);
+		// Flashlight cutOff angle
+		modelShaderProgram.setFloat("flashlight.cutOff", glm::cos(glm::radians(5.0f)));
+		modelShaderProgram.setFloat("flashlight.outerCutOff", glm::cos(glm::radians(20.0f)));
+		//
+		// Directional light properties
+		//modelShaderProgram.setVec3("dirLights[0].ambient", dl_ambientColor);
+		//modelShaderProgram.setVec3("dirLights[0].diffuse", dl_diffuseColor);
+		//modelShaderProgram.setVec3("dirLights[0].specular", dl_specularIntensity);
+		//// Directional light direction
+		//modelShaderProgram.setVec3("dirLights[0].direction", glm::vec3(1.0f, -0.5f, -1.0f));
+
+		backpackModel.Draw(modelShaderProgram);
 		//#####################################################################################################################################################################3333
 
 		// Print FPS
