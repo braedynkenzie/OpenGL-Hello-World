@@ -1336,6 +1336,9 @@
     <None Include="vertex_shader_model_src.glsl">
       <Filter>Resource Files\Shaders</Filter>
     </None>
+    <None Include="fragment_shader_object_outline_src.glsl">
+      <Filter>Resource Files\Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="smiling_texture.jpg">

@@ -67,6 +67,11 @@
 	vec3 CalcPointLight(PointLight pointLight, vec3 normal, vec3 fragPos, vec3 viewDir);
 	vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir);
 	vec3 CalcSpotLight(SpotLight spotLight, vec3 normal, vec3 fragPos, vec3 viewDir);
+	float LinearizeDepth(float depth);
+
+	// For depth/z-buffer visualization purposes:
+	float NEAR = 0.1f;
+	float FAR = 100.0f;
 
 void main()
 {
@@ -93,6 +98,10 @@ void main()
 	// Combine
 	//vec3 result = ambient  + diffuse + specular + fl_ambient + fl_diffuse + fl_specular
 	FragColor = vec4(result, 1.0);
+
+	// Visualize depth/z-buffer (as linear)
+	//float depth = LinearizeDepth(gl_FragCoord.z) / FAR;
+	//FragColor = vec4(vec3(depth), 1.0);
 }
 
 vec3 CalcPointLight(PointLight pointLight, vec3 normal, vec3 fragPos, vec3 viewDir)
@@ -169,4 +178,10 @@ vec3 CalcSpotLight(SpotLight spotLight, vec3 norm, vec3 fragPos, vec3 viewDir)
 	}
 	// Combine 
 	return (fl_ambient + fl_diffuse + fl_specular);
+}
+
+float LinearizeDepth(float depth)
+{
+	float z = depth * 2.0 - 1.0; // back to NDC
+	return (2.0 * NEAR * FAR) / (FAR + NEAR - z * (FAR - NEAR));
 }

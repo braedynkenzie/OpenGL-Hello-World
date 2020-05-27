@@ -444,6 +444,7 @@
     <None Include="fragment_shader_lighting_src.glsl" />
     <None Include="fragment_shader_light_src.glsl" />
     <None Include="fragment_shader_model_src.glsl" />
+    <None Include="fragment_shader_object_outline_src.glsl" />
     <None Include="fragment_shader_src.glsl" />
     <None Include="glm\detail\func_common.inl" />
     <None Include="glm\detail\func_common_simd.inl" />

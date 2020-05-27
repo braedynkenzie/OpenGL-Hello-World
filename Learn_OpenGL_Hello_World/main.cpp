@@ -11,13 +11,14 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-// define other functions
+// Function declarations
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 void scroll_callback(GLFWwindow* window, double xOffset, double yOffset);
 void processInput(GLFWwindow* window);
 unsigned int loadTexture(const char* path);
+void drawMovingCubes(glm::vec3 cubePositions, Shader lightingShaderProgram);
 
 // Global variables
 const unsigned int SCREEN_WIDTH = 800 * 1.4;
@@ -323,9 +324,10 @@ int main() {
 	};
 
 	Shader shaderProgram_original = Shader("vertex_shader_src.glsl", "fragment_shader_src.glsl");
-	Shader lightingShaderProgram = Shader("vertex_shader_lighting_src.glsl", "fragment_shader_lighting_src.glsl");
-	Shader lampShaderProgram = Shader("vertex_shader_light_src.glsl", "fragment_shader_light_src.glsl");	
-	Shader modelShaderProgram = Shader("vertex_shader_model_src.glsl", "fragment_shader_model_src.glsl");
+	Shader lightingShader = Shader("vertex_shader_lighting_src.glsl", "fragment_shader_lighting_src.glsl");
+	Shader lampShader = Shader("vertex_shader_light_src.glsl", "fragment_shader_light_src.glsl");
+	Shader modelShader = Shader("vertex_shader_model_src.glsl", "fragment_shader_model_src.glsl");
+	Shader outlineShader = Shader("vertex_shader_model_src.glsl", "fragment_shader_object_outline_src.glsl");
 
 	// -------------------------------------------------------------------------------------------------------------------------
 	// Generate, bind, and fill main Vertex Array Object (VAO) and Vertex Buffer Objects (VBOs)
@@ -405,8 +407,8 @@ int main() {
 	/*shaderProgram.use();
 	shaderProgram.setInt("imageTexture1", 0); 
 	shaderProgram.setInt("imageTexture2", 1); */
-	lightingShaderProgram.use();
-	lightingShaderProgram.setInt("metalBorderTexture", 2);
+	lightingShader.use();
+	lightingShader.setInt("metalBorderTexture", 2);
 
 	// Create copies of the cube at different x,y,z locations
 	glm::vec3 cubePositions[] = {
@@ -428,14 +430,9 @@ int main() {
 	stbi_set_flip_vertically_on_load(true);
 
 	// Load models
-	modelShaderProgram.use();
+	modelShader.use();
 	Model backpackModel = Model((char*)"models/backpack/backpack.obj");
-
-	// Enable OpenGL z-buffer depth comparisons
-	glEnable(GL_DEPTH_TEST);
-	//glDepthFunc(GL_ALWAYS);
-	glDepthFunc(GL_LESS);
-
+	
 	// -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 	// Display graphics loop
 	while (!glfwWindowShouldClose(window))
@@ -449,6 +446,25 @@ int main() {
 		// user key input processing
 		processInput(window);
 
+		// Enable OpenGL z-buffer depth comparisons
+		glEnable(GL_DEPTH_TEST);
+		// Render only those fragments with lower depth values
+		glDepthFunc(GL_LESS);
+		// Enable OpenGL stencil buffer
+		glEnable(GL_STENCIL_TEST);
+		// Tell OpenGL that whenever the stencil value of a fragment is not equal to 1, it should be discarded
+		// glStencilFunc(GL_EQUAL, 1, 0xFF);
+		// glStencilOp parameters:
+		// - sfail: action to take if the stencil test fails
+		// - dpfail : action to take if the stencil test passes, but the depth test fails
+		// - dppass : action to take if both the stenciland the depth test pass
+		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+		// set all fragments to update the stencil buffer
+		glStencilFunc(GL_ALWAYS, 1, 0xFF);
+		// bitwise AND operator with each stencil buffer write
+		glStencilMask(0xFF);  // enable stencil buffer writing
+		// Next draw the objects normally before switching stencil buffer properties and shader
+
 		// Lamp point light colour
 		glm::vec3 lightColor;
 		lightColor.x = sin(glfwGetTime() * 1.0f) / 2.0f + 0.7f;
@@ -458,21 +474,10 @@ int main() {
 		// Set clear colour
 		glClearColor(lightColor.x / 10.0f, lightColor.y / 10.0f, lightColor.z / 10.0f, 1.0f);
 		// Clear colour and z-buffers
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		// Colour changing with time
-		float timeValue = glfwGetTime();
-		float redValue   = (sin(timeValue - 1) / 2.0f) + 0.5f;
-		float greenValue = (sin(timeValue    ) / 2.0f) + 0.5f;
-		float blueValue  = (sin(timeValue + 1) / 2.0f) + 0.5f;
-		//shaderProgram.setFloat4("uniformColour", redValue, greenValue, blueValue, 1.0f);
-
-		// bind diffuse map texture
-		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_2D, metalBorderTexture);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 		// Lamp object rendering
-		lampShaderProgram.use();
+		lampShader.use();
 		// Model matrix: Translate and scale the light object
 		glm::mat4 model_matrix = glm::mat4(1.0f);
 		glm::vec3 movingLightPos = pointLightPos;
@@ -489,27 +494,27 @@ int main() {
 		projection_matrix = glm::perspective(glm::radians(camera.Zoom), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
 		// Set uniforms in shader program
 		// Model, view, projection matrices
-		lampShaderProgram.setMatrix4("model", model_matrix);
-		lampShaderProgram.setMatrix4("view" , view_matrix);
-		lampShaderProgram.setMatrix4("proj" , projection_matrix);
+		lampShader.setMatrix4("model", model_matrix);
+		lampShader.setMatrix4("view" , view_matrix);
+		lampShader.setMatrix4("proj" , projection_matrix);
 		// Light colour uniform
-		lampShaderProgram.setVec3("lampColor", lightColor * 0.8f);
+		lampShader.setVec3("lampColor", lightColor * 0.8f);
 		glBindVertexArray(VAO_light);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
 		// Cube shader
-		lightingShaderProgram.use();
+		lightingShader.use();
 		// Set uniforms in shader program
 		// Model matrix for world-centered cube
 		model_matrix = glm::mat4(1.0f);
-		lightingShaderProgram.setMatrix4("model", model_matrix);
+		lightingShader.setMatrix4("model", model_matrix);
 		// Use same view and proj matrices as for lamp (above)
-		lightingShaderProgram.setMatrix4("view", view_matrix);
-		lightingShaderProgram.setMatrix4("proj", projection_matrix);
-		lightingShaderProgram.setVec3("viewPos", camera.Position.x, camera.Position.y, camera.Position.z);
+		lightingShader.setMatrix4("view", view_matrix);
+		lightingShader.setMatrix4("proj", projection_matrix);
+		lightingShader.setVec3("viewPos", camera.Position.x, camera.Position.y, camera.Position.z);
 		// Set material struct properties
-		lightingShaderProgram.setVec3("material.specular", 0.5f, 0.5f, 0.5f);
-		lightingShaderProgram.setFloat("material.shininess", 16.0f);
+		lightingShader.setVec3("material.specular", 0.5f, 0.5f, 0.5f);
+		lightingShader.setFloat("material.shininess", 16.0f);
 		//
 		// Point light properties
 		glm::vec3 pl_diffuseIntensity = glm::vec3(0.9f);
@@ -517,15 +522,15 @@ int main() {
 		glm::vec3 pl_specularIntensity = glm::vec3(0.8f);
 		glm::vec3 pl_diffuseColor = lightColor * pl_diffuseIntensity;
 		glm::vec3 pl_ambientColor = pl_diffuseColor * pl_ambientIntensity;
-		lightingShaderProgram.setVec3("pointLights[0].ambient", pl_ambientColor);
-		lightingShaderProgram.setVec3("pointLights[0].diffuse", pl_diffuseColor);
-		lightingShaderProgram.setVec3("pointLights[0].specular", pl_specularIntensity);
+		lightingShader.setVec3("pointLights[0].ambient", pl_ambientColor);
+		lightingShader.setVec3("pointLights[0].diffuse", pl_diffuseColor);
+		lightingShader.setVec3("pointLights[0].specular", pl_specularIntensity);
 		// Point light attenuation properties
-		lightingShaderProgram.setFloat("pointLights[0].constant", 1.0f);
-		lightingShaderProgram.setFloat("pointLights[0].linear", 0.09f);
-		lightingShaderProgram.setFloat("pointLights[0].quadratic", 0.032f);
+		lightingShader.setFloat("pointLights[0].constant", 1.0f);
+		lightingShader.setFloat("pointLights[0].linear", 0.09f);
+		lightingShader.setFloat("pointLights[0].quadratic", 0.032f);
 		// Point light position
-		lightingShaderProgram.setVec3("pointLights[0].position", movingLightPos);
+		lightingShader.setVec3("pointLights[0].position", movingLightPos);
 		//
 		// Flashlight properties
 		glm::vec3 flashlightColour = glm::vec3(0.7f);
@@ -534,113 +539,141 @@ int main() {
 		glm::vec3 fl_specularIntensity = glm::vec3(0.4f);
 		glm::vec3 fl_diffuseColor = flashlightColour * fl_diffuseIntensity;
 		glm::vec3 fl_ambientColor = fl_diffuseColor * fl_ambientIntensity;
-		lightingShaderProgram.setBool("flashlight.on", flashlightOn);
-		lightingShaderProgram.setVec3("flashlight.ambient", fl_ambientColor);
-		lightingShaderProgram.setVec3("flashlight.diffuse", fl_diffuseColor);
-		lightingShaderProgram.setVec3("flashlight.specular", fl_specularIntensity);
+		lightingShader.setBool("flashlight.on", flashlightOn);
+		lightingShader.setVec3("flashlight.ambient", fl_ambientColor);
+		lightingShader.setVec3("flashlight.diffuse", fl_diffuseColor);
+		lightingShader.setVec3("flashlight.specular", fl_specularIntensity);
 		// Flashlight attenuation properties
-		lightingShaderProgram.setFloat("flashlight.constant", 1.0f);
-		lightingShaderProgram.setFloat("flashlight.linear", 0.09f);
-		lightingShaderProgram.setFloat("flashlight.quadratic", 0.032f);
+		lightingShader.setFloat("flashlight.constant", 1.0f);
+		lightingShader.setFloat("flashlight.linear", 0.09f);
+		lightingShader.setFloat("flashlight.quadratic", 0.032f);
 		// Flashlight position and direction
-		lightingShaderProgram.setVec3("flashlight.position", camera.Position);
-		lightingShaderProgram.setVec3("flashlight.direction", camera.Front);
+		lightingShader.setVec3("flashlight.position", camera.Position);
+		lightingShader.setVec3("flashlight.direction", camera.Front);
 		// Flashlight cutOff angle
-		lightingShaderProgram.setFloat("flashlight.cutOff", glm::cos(glm::radians(5.0f)));
-		lightingShaderProgram.setFloat("flashlight.outerCutOff", glm::cos(glm::radians(20.0f)));
+		lightingShader.setFloat("flashlight.cutOff", glm::cos(glm::radians(5.0f)));
+		lightingShader.setFloat("flashlight.outerCutOff", glm::cos(glm::radians(20.0f)));
 		//
 		// Directional light properties
 		glm::vec3 dl_lightColour = glm::vec3(1.0f);
-		glm::vec3 dl_diffuseIntensity = glm::vec3(1.0f);
-		glm::vec3 dl_ambientIntensity = glm::vec3(0.4f);
+		glm::vec3 dl_diffuseIntensity = glm::vec3(0.4f);
+		glm::vec3 dl_ambientIntensity = glm::vec3(0.2f);
 		glm::vec3 dl_specularIntensity = glm::vec3(0.1f);
 		glm::vec3 dl_diffuseColor = dl_lightColour * dl_diffuseIntensity;
 		glm::vec3 dl_ambientColor = dl_diffuseColor * dl_ambientIntensity;
-		lightingShaderProgram.setVec3("dirLights[0].ambient", dl_ambientColor);
-		lightingShaderProgram.setVec3("dirLights[0].diffuse", dl_diffuseColor);
-		lightingShaderProgram.setVec3("dirLights[0].specular", dl_specularIntensity);
+		lightingShader.setVec3("dirLights[0].ambient", dl_ambientColor);
+		lightingShader.setVec3("dirLights[0].diffuse", dl_diffuseColor);
+		lightingShader.setVec3("dirLights[0].specular", dl_specularIntensity);
 		// Directional light direction
-		lightingShaderProgram.setVec3("dirLights[0].direction", glm::vec3(1.0f, -0.5f, -1.0f));
+		lightingShader.setVec3("dirLights[0].direction", glm::vec3(1.0f, -0.5f, -1.0f));
+
+		// Bind metal border texture diffuse map 
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, metalBorderTexture);
 
 		glBindVertexArray(VAO_cube);
 		//glDrawElements(GL_TRIANGLES, 42, GL_UNSIGNED_INT, 0);
 
 		// Moving cube objects
+		//drawMovingCubes(*cubePositions, lightingShaderProgram);
 		for (unsigned int i = 0; i < sizeof(cubePositions) / sizeof(glm::vec3); i++)
 		{
 			// Model: Render copies of cube with differing model matrices
 			glm::mat4 model_matrix(1.0f);
 			model_matrix = glm::translate(model_matrix, glm::vec3(0.0f, 0.0f, -0.5f));
-			model_matrix = glm::translate(model_matrix, cubePositions[i] * (float)(sin(glfwGetTime()) / 2.0f + 0.5f));
+			glm::vec3 movingCubePos = cubePositions[i] * (float)(sin(glfwGetTime()) / 2.0f + 0.5f);
+			model_matrix = glm::translate(model_matrix, movingCubePos);
 			float twistSpeed = i / 2.0f + 7.0f;
-			model_matrix = glm::rotate(model_matrix, twistSpeed*(float)(sin(glfwGetTime()) / 2.0f + 0.5f), glm::vec3(0.1f, 0.1f, 0.15f));
+			model_matrix = glm::rotate(model_matrix, twistSpeed * (float)(sin(glfwGetTime()) / 2.0f + 0.5f), glm::vec3(0.1f, 0.1f, 0.15f));
 			// View: Translate scene in reverse direction from camera
 			glm::mat4 view_matrix = camera.GetViewMatrix();
 			// Proj: Zoom/Field of View (FOV), set aspect ratio, front and back clipping of view frustum 
 			glm::mat4 projection_matrix(1.0f);
 			projection_matrix = glm::perspective(glm::radians(camera.Zoom), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
 			// Set uniforms in shader program
-			lightingShaderProgram.setMatrix4("model", model_matrix);
-			lightingShaderProgram.setMatrix4("view" , view_matrix);
-			lightingShaderProgram.setMatrix4("proj" , projection_matrix);
-
-			//glDrawElements(GL_TRIANGLES, 42, GL_UNSIGNED_INT, 0);
+			lightingShader.setMatrix4("model", model_matrix);
+			lightingShader.setMatrix4("view", view_matrix);
+			lightingShader.setMatrix4("proj", projection_matrix);
+			// Draw
+			// glDrawElements(GL_TRIANGLES, 42, GL_UNSIGNED_INT, 0);
 		}
 
-		// don't forget to enable shader before setting uniforms
-		modelShaderProgram.use();
+		// Use the model shader
+		modelShader.use();
 
-		// view/projection transformations
+		// View/Projection transformations
 		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
 		glm::mat4 view = camera.GetViewMatrix();
-		modelShaderProgram.setMatrix4("proj", projection);
-		modelShaderProgram.setMatrix4("view", view);
+		modelShader.setMatrix4("proj", projection);
+		modelShader.setMatrix4("view", view);
 
-		// render the loaded model
-		glm::mat4 model = glm::mat4(1.0f);
-		model = glm::translate(model, glm::vec3(0.0f, 0.0f, 1.4f));
-		model = glm::scale(model, glm::vec3(0.5f));	
-		modelShaderProgram.setMatrix4("model", model);
-		modelShaderProgram.setVec3("viewPos", camera.Position.x, camera.Position.y, camera.Position.z);
+		// Render the loaded model
+		glm::mat4 loaded_model_matrix = glm::mat4(1.0f);
+		loaded_model_matrix = glm::translate(loaded_model_matrix, glm::vec3(0.0f, 0.0f, 1.7f));
+		loaded_model_matrix = glm::scale(loaded_model_matrix, glm::vec3(0.5f));
+		modelShader.setMatrix4("model", loaded_model_matrix);
+		modelShader.setVec3("viewPos", camera.Position.x, camera.Position.y, camera.Position.z);
 		// Set material struct properties
-		modelShaderProgram.setVec3("material.specular", 0.5f, 0.5f, 0.5f);
-		modelShaderProgram.setFloat("material.shininess", 16.0f);
+		modelShader.setVec3("material.specular", 0.5f, 0.5f, 0.5f);
+		modelShader.setFloat("material.shininess", 16.0f);
 		//
 		// Point light properties
-		modelShaderProgram.setVec3("pointLights[0].ambient", pl_ambientColor);
-		modelShaderProgram.setVec3("pointLights[0].diffuse", pl_diffuseColor);
-		modelShaderProgram.setVec3("pointLights[0].specular", pl_specularIntensity);
+		modelShader.setVec3("pointLights[0].ambient", pl_ambientColor);
+		modelShader.setVec3("pointLights[0].diffuse", pl_diffuseColor);
+		modelShader.setVec3("pointLights[0].specular", pl_specularIntensity);
 		// Point light attenuation properties
-		modelShaderProgram.setFloat("pointLights[0].constant", 1.0f);
-		modelShaderProgram.setFloat("pointLights[0].linear", 0.09f);
-		modelShaderProgram.setFloat("pointLights[0].quadratic", 0.032f);
+		modelShader.setFloat("pointLights[0].constant", 1.0f);
+		modelShader.setFloat("pointLights[0].linear", 0.09f);
+		modelShader.setFloat("pointLights[0].quadratic", 0.032f);
 		// Point light position
-		modelShaderProgram.setVec3("pointLights[0].position", movingLightPos);
+		modelShader.setVec3("pointLights[0].position", movingLightPos);
 		//
 		// Flashlight properties
-		modelShaderProgram.setBool("flashlight.on", flashlightOn);
-		modelShaderProgram.setVec3("flashlight.ambient", fl_ambientColor);
-		modelShaderProgram.setVec3("flashlight.diffuse", fl_diffuseColor);
-		modelShaderProgram.setVec3("flashlight.specular", fl_specularIntensity);
+		modelShader.setBool("flashlight.on", flashlightOn);
+		modelShader.setVec3("flashlight.ambient", fl_ambientColor);
+		modelShader.setVec3("flashlight.diffuse", fl_diffuseColor);
+		modelShader.setVec3("flashlight.specular", fl_specularIntensity);
 		// Flashlight attenuation properties
-		modelShaderProgram.setFloat("flashlight.constant", 1.0f);
-		modelShaderProgram.setFloat("flashlight.linear", 0.09f);
-		modelShaderProgram.setFloat("flashlight.quadratic", 0.032f);
+		modelShader.setFloat("flashlight.constant", 1.0f);
+		modelShader.setFloat("flashlight.linear", 0.09f);
+		modelShader.setFloat("flashlight.quadratic", 0.032f);
 		// Flashlight position and direction
-		modelShaderProgram.setVec3("flashlight.position", camera.Position);
-		modelShaderProgram.setVec3("flashlight.direction", camera.Front);
+		modelShader.setVec3("flashlight.position", camera.Position);
+		modelShader.setVec3("flashlight.direction", camera.Front);
 		// Flashlight cutOff angle
-		modelShaderProgram.setFloat("flashlight.cutOff", glm::cos(glm::radians(5.0f)));
-		modelShaderProgram.setFloat("flashlight.outerCutOff", glm::cos(glm::radians(20.0f)));
+		modelShader.setFloat("flashlight.cutOff", glm::cos(glm::radians(5.0f)));
+		modelShader.setFloat("flashlight.outerCutOff", glm::cos(glm::radians(20.0f)));
 		//
 		// Directional light properties
-		modelShaderProgram.setVec3("dirLights[0].ambient", dl_ambientColor);
-		modelShaderProgram.setVec3("dirLights[0].diffuse", dl_diffuseColor);
-		modelShaderProgram.setVec3("dirLights[0].specular", dl_specularIntensity);
+		modelShader.setVec3("dirLights[0].ambient", dl_ambientColor);
+		modelShader.setVec3("dirLights[0].diffuse", dl_diffuseColor);
+		modelShader.setVec3("dirLights[0].specular", dl_specularIntensity);
 		// Directional light direction
-		modelShaderProgram.setVec3("dirLights[0].direction", glm::vec3(1.0f, -0.5f, -1.0f));
+		modelShader.setVec3("dirLights[0].direction", glm::vec3(1.0f, -0.5f, -1.0f));
 		// 
-		backpackModel.Draw(modelShaderProgram);
+		backpackModel.Draw(modelShader);
+
+
+
+		outlineShader.use();
+		// Draw outline around objects
+		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+		glStencilMask(0x00); // disable writing to the stencil buffer
+		glDisable(GL_DEPTH_TEST);
+		// 
+		// View/Projection transformations
+		//glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
+		//glm::mat4 view = camera.GetViewMatrix();
+		outlineShader.setMatrix4("proj", projection);
+		outlineShader.setMatrix4("view", view);
+		//
+		// Render the outline (scaled model)
+		glm::mat4 model_outline_matrix = glm::mat4(1.0f);
+		model_outline_matrix = glm::translate(model_outline_matrix, glm::vec3(0.0f, 0.0f, 1.72f));
+		// Scale by factor larger than before
+		model_outline_matrix = glm::scale(model_outline_matrix, glm::vec3(0.51f));
+		outlineShader.setMatrix4("model", model_outline_matrix);
+		backpackModel.Draw(outlineShader);
 
 		// Print FPS
 		float fps = 1.0f / deltaTime;
@@ -671,6 +704,11 @@ int main() {
 	glDeleteBuffers(1, &EBO);
 	glfwTerminate();
 	return 0;
+}
+
+void drawMovingCubes(glm::vec3 cubePositions, Shader lightingShaderProgram)
+{
+	// TODO
 }
 
 void processInput(GLFWwindow* window)
