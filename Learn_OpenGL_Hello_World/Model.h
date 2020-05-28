@@ -104,7 +104,7 @@ private:
 			normVector.z = mesh->mNormals[i].z;
 			meshVertex.Normal = normVector;
 			// process the vertex's texture coords
-			if (mesh->mTextureCoords[0]) // does the mesh contain texture coordinates?
+			if (mesh->mTextureCoords[0]) 
 			{
 				glm::vec2 texCoordsVec;
 				texCoordsVec.x = mesh->mTextureCoords[0][i].x;

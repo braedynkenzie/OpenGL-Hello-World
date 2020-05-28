@@ -40,9 +40,11 @@ float pitch = 0.0f;
 bool firstMouseCapture = true;
 bool isMovingLight = false;
 
-// Lighting
+// Positions
 glm::vec3 pointLightPos(1.2f, 1.0f, 2.0f);
 glm::vec3 movingLightPos = pointLightPos;
+glm::vec3 backpackPos = glm::vec3(-1.8f, 0.0f, 2.0f);
+
 bool flashlightOn = false;
 
 float deltaTime = 0.0f; // Time to render last frame
@@ -408,11 +410,8 @@ int main() {
 	unsigned int metalBorderTexture = loadTexture("metal_border_container_texture.png");
 
 	// Set textures in shader
-	/*shaderProgram.use();
-	shaderProgram.setInt("imageTexture1", 0); 
-	shaderProgram.setInt("imageTexture2", 1); */
 	lightingShader.use();
-	lightingShader.setInt("metalBorderTexture", 3);
+	lightingShader.setInt("material.diffuse", 7); // set metalBorderTexture
 
 	// Create copies of the cube at different x,y,z locations
 	glm::vec3 cubePositions[] = {
@@ -511,7 +510,7 @@ int main() {
 			fl_ambientColor, fl_diffuseColor, fl_specularIntensity, dl_ambientColor, dl_diffuseColor, dl_specularIntensity);
 		// Bind metal border texture diffuse map 
 		// TODO figure out why the cube is getting wrong texture
-		glActiveTexture(GL_TEXTURE3);
+		glActiveTexture(GL_TEXTURE7);
 		glBindTexture(GL_TEXTURE_2D, metalBorderTexture);
 		glBindVertexArray(VAO_cube);
 		//glDrawElements(GL_TRIANGLES, 42, GL_UNSIGNED_INT, 0);
@@ -539,7 +538,7 @@ int main() {
 		//
 		// Render the outline (scaled model)
 		glm::mat4 model_outline_matrix = glm::mat4(1.0f);
-		model_outline_matrix = glm::translate(model_outline_matrix, glm::vec3(0.0f, 0.0f, 1.72f));
+		model_outline_matrix = glm::translate(model_outline_matrix, glm::vec3(backpackPos));
 		// Scale by factor larger than before
 		model_outline_matrix = glm::scale(model_outline_matrix, glm::vec3(0.51f));
 		outlineShader.setMatrix4("model", model_outline_matrix);
@@ -693,7 +692,7 @@ void setupModelObject(Shader modelShader, glm::vec3 lightColor, glm::vec3 pl_amb
 
 	// Render the loaded model
 	glm::mat4 loaded_model_matrix = glm::mat4(1.0f);
-	loaded_model_matrix = glm::translate(loaded_model_matrix, glm::vec3(0.0f, 0.0f, 1.7f));
+	loaded_model_matrix = glm::translate(loaded_model_matrix, glm::vec3(backpackPos));
 	loaded_model_matrix = glm::scale(loaded_model_matrix, glm::vec3(0.5f));
 	modelShader.setMatrix4("model", loaded_model_matrix);
 	modelShader.setVec3("viewPos", camera.Position.x, camera.Position.y, camera.Position.z);
