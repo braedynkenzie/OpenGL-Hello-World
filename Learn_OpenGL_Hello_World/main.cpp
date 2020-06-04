@@ -45,7 +45,8 @@ glm::vec3 pointLightPos(1.2f, 1.0f, 2.0f);
 glm::vec3 movingLightPos = pointLightPos;
 glm::vec3 backpackPos = glm::vec3(-1.8f, 0.0f, 2.0f);
 
-bool flashlightOn = false;
+bool isFlashlightOn = false;
+bool isOutlineOn = false;
 
 float deltaTime = 0.0f; // Time to render last frame
 float lastFrame = 0.0f; // Time of last frame
@@ -94,7 +95,8 @@ int main() {
 	// Callback function for mouse buttons
 	glfwSetMouseButtonCallback(window, mouse_button_callback);
 
-	// vertices of triangle in NDCS 
+	// vertices of triangles in object space
+	// Ensure all triangles are counter-clockwise winding order
 	float vertices_old[] = {
 		// first triangle
 		0.5f, 0.5f, 0.0f, // top right
@@ -107,23 +109,23 @@ int main() {
 	};
 
 	float vertices[] = {
-		0.5f, 0.5f, 0.0f, // top right 1
-		0.5f, -0.5f, 0.0f, // bottom right 1
-		0.0f, -0.5f, 0.0f, // bottom left 1
-		0.0f, 0.5f, 0.0f, // top right 2
-		-0.5f, 0.5f, 0.0f, // top left 2
-		-0.5f, -0.5f, 0.0f, // bottom left 2
+		0.5f, 0.5f, 0.0f, // Cube back right
+		0.5f, -0.5f, 0.0f,
+		-0.5f, -0.5f, 0.0f,  
+		-0.5f, 0.5f, 0.0f, // Cube back left
+		0.5f, 0.5f, 0.0f,
+		-0.5f, -0.5f, 0.0f,
 
 		0.5f, 0.5f, 1.0f, // Cube front right
-		0.5f, -0.5f, 1.0f,
 		-0.5f, -0.5f, 1.0f,
+		0.5f, -0.5f, 1.0f,
 		0.5f, 0.5f, 1.0f, // Cube front left
 		-0.5f, 0.5f, 1.0f,
 		-0.5f, -0.5f, 1.0f,
 
 		0.5f, 0.5f, 0.0f, // Cube right right
-		0.5f, -0.5f, 0.0f,
 		0.5f, -0.5f, 1.0f,
+		0.5f, -0.5f, 0.0f,
 		0.5f, 0.5f, 0.0f, // Cube right left
 		0.5f, 0.5f, 1.0f,
 		0.5f, -0.5f, 1.0f,
@@ -132,12 +134,12 @@ int main() {
 		-0.5f, -0.5f, 0.0f,
 		-0.5f, -0.5f, 1.0f,
 		-0.5f, 0.5f, 0.0f, // Cube left left
-		-0.5f, 0.5f, 1.0f,
 		-0.5f, -0.5f, 1.0f,
+		-0.5f, 0.5f, 1.0f,
 
 		0.5f, 0.5f, 0.0f, // Cube top right
-		0.5f, 0.5f, 1.0f,
 		-0.5f, 0.5f, 1.0f,
+		0.5f, 0.5f, 1.0f,
 		0.5f, 0.5f, 0.0f, // Cube top left
 		-0.5f, 0.5f, 0.0f,
 		-0.5f, 0.5f, 1.0f,
@@ -146,8 +148,8 @@ int main() {
 		0.5f, -0.5f, 1.0f,
 		-0.5f, -0.5f, 1.0f,
 		0.5f, -0.5f, 0.0f, // Cube bottom left
-		-0.5f, -0.5f, 0.0f,
 		-0.5f, -0.5f, 1.0f,
+		-0.5f, -0.5f, 0.0f,
 	};
 
 	float surfaceNormals[] = {
@@ -251,21 +253,21 @@ int main() {
 		0.0f, 1.0f,
 		0.0f, 0.0f,
 
-		1.0f, 1.0f,
 		1.0f, 0.0f,
+		1.0f, 1.0f,
 		0.0f, 0.0f,
 
 		1.0f, 1.0f, // front
-		0.0f, 1.0f,
 		0.0f, 0.0f,
+		0.0f, 1.0f,
 
 		1.0f, 1.0f,
 		1.0f, 0.0f,
 		0.0f, 0.0f,
 
 		1.0f, 1.0f, // right
-		0.0f, 1.0f,
 		0.0f, 0.0f,
+		0.0f, 1.0f,
 
 		1.0f, 1.0f,
 		1.0f, 0.0f,
@@ -276,12 +278,12 @@ int main() {
 		0.0f, 0.0f,
 
 		1.0f, 1.0f,
-		1.0f, 0.0f,
 		0.0f, 0.0f,
+		1.0f, 0.0f,
 
 		1.0f, 1.0f, // top
-		0.0f, 1.0f,
 		0.0f, 0.0f,
+		0.0f, 1.0f,
 
 		1.0f, 1.0f,
 		1.0f, 0.0f,
@@ -292,8 +294,8 @@ int main() {
 		0.0f, 0.0f,
 
 		1.0f, 1.0f,
-		1.0f, 0.0f,
 		0.0f, 0.0f,
+		1.0f, 0.0f,
 	};
 
 	float textureCoordsFace[] = {
@@ -435,7 +437,28 @@ int main() {
 	// Load models
 	modelShader.use();
 	Model backpackModel = Model((char*)"models/backpack/backpack.obj");
+
+	// Flashlight properties
+	glm::vec3 flashlightColour = glm::vec3(0.7f);
+	glm::vec3 fl_diffuseIntensity = glm::vec3(1.0f);
+	glm::vec3 fl_ambientIntensity = glm::vec3(0.2f);
+	glm::vec3 fl_specularIntensity = glm::vec3(0.4f);
+	glm::vec3 fl_diffuseColor = flashlightColour * fl_diffuseIntensity;
+	glm::vec3 fl_ambientColor = fl_diffuseColor * fl_ambientIntensity;
+	// Directional light properties
+	glm::vec3 dl_lightColour = glm::vec3(1.0f);
+	glm::vec3 dl_diffuseIntensity = glm::vec3(0.5f);
+	glm::vec3 dl_ambientIntensity = glm::vec3(0.2f);
+	glm::vec3 dl_specularIntensity = glm::vec3(0.2f);
+	glm::vec3 dl_diffuseColor = dl_lightColour * dl_diffuseIntensity;
+	glm::vec3 dl_ambientColor = dl_diffuseColor * dl_ambientIntensity;
 	
+	// Enable face culling
+	glEnable(GL_CULL_FACE);
+	//glCullFace(GL_FRONT); // cull front faces
+	glCullFace(GL_BACK); // cull back faces
+	glFrontFace(GL_CCW); // tell OpenGL that front faces have CCW winding order
+
 	// -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 	// Display graphics loop
 	while (!glfwWindowShouldClose(window))
@@ -453,6 +476,7 @@ int main() {
 		glEnable(GL_DEPTH_TEST);
 		// Render only those fragments with lower depth values
 		glDepthFunc(GL_LESS);
+
 		// Enable OpenGL stencil buffer
 		glEnable(GL_STENCIL_TEST);
 		// Tell OpenGL that whenever the stencil value of a fragment is not equal to 1, it should be discarded
@@ -485,20 +509,6 @@ int main() {
 		glm::vec3 pl_specularIntensity = glm::vec3(0.8f);
 		glm::vec3 pl_diffuseColor = lightColor * pl_diffuseIntensity;
 		glm::vec3 pl_ambientColor = pl_diffuseColor * pl_ambientIntensity;
-		// Flashlight properties
-		glm::vec3 flashlightColour = glm::vec3(0.7f);
-		glm::vec3 fl_diffuseIntensity = glm::vec3(1.0f);
-		glm::vec3 fl_ambientIntensity = glm::vec3(0.2f);
-		glm::vec3 fl_specularIntensity = glm::vec3(0.4f);
-		glm::vec3 fl_diffuseColor = flashlightColour * fl_diffuseIntensity;
-		glm::vec3 fl_ambientColor = fl_diffuseColor * fl_ambientIntensity;
-		// Directional light properties
-		glm::vec3 dl_lightColour = glm::vec3(1.0f);
-		glm::vec3 dl_diffuseIntensity = glm::vec3(0.4f);
-		glm::vec3 dl_ambientIntensity = glm::vec3(0.2f);
-		glm::vec3 dl_specularIntensity = glm::vec3(0.1f);
-		glm::vec3 dl_diffuseColor = dl_lightColour * dl_diffuseIntensity;
-		glm::vec3 dl_ambientColor = dl_diffuseColor * dl_ambientIntensity;
 
 		// Lamp object rendering
 		setupLampObject(lampShader, lightColor);
@@ -515,34 +525,41 @@ int main() {
 		glBindVertexArray(VAO_cube);
 		//glDrawElements(GL_TRIANGLES, 42, GL_UNSIGNED_INT, 0);
 
+		// set all fragments to NOT update the stencil buffer
+		glStencilFunc(GL_ALWAYS, 0, 0xFF);
 		// Setup and render moving cube objects
 		setupMovingCubes(cubePositions, lightingShader);
 
-		// Setup the render the loaded backpack model
+		// set all fragments to update the stencil buffer
+		glStencilFunc(GL_ALWAYS, 1, 0xFF);
+		// Setup and render the loaded backpack model
 		setupModelObject(modelShader, lightColor, pl_ambientIntensity, pl_diffuseIntensity, pl_specularIntensity,
 			fl_ambientColor, fl_diffuseColor, fl_specularIntensity, dl_ambientColor, dl_diffuseColor, dl_specularIntensity);
 		backpackModel.Draw(modelShader);
 
-		// TODO figure out why cubes are rendered over outline (likely need to turn off writing to stencil buffer before rendering the cubes)
-		outlineShader.use();
-		// Draw outline around objects
-		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-		glStencilMask(0x00); // disable writing to the stencil buffer
-		glDisable(GL_DEPTH_TEST);
-		// 
-		// View/Projection transformations
-		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
-		glm::mat4 view = camera.GetViewMatrix();
-		outlineShader.setMatrix4("proj", projection);
-		outlineShader.setMatrix4("view", view);
-		//
-		// Render the outline (scaled model)
-		glm::mat4 model_outline_matrix = glm::mat4(1.0f);
-		model_outline_matrix = glm::translate(model_outline_matrix, glm::vec3(backpackPos));
-		// Scale by factor larger than before
-		model_outline_matrix = glm::scale(model_outline_matrix, glm::vec3(0.51f));
-		outlineShader.setMatrix4("model", model_outline_matrix);
-		backpackModel.Draw(outlineShader);
+		if (isOutlineOn) {
+			// TODO figure out why cubes are rendered over outline 
+			// (likely need to turn off writing to stencil buffer before rendering the cubes)
+			outlineShader.use();
+			// Draw outline around objects
+			glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+			glStencilMask(0x00); // disable writing to the stencil buffer
+			glDisable(GL_DEPTH_TEST);
+			// 
+			// View/Projection transformations
+			glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
+			glm::mat4 view = camera.GetViewMatrix();
+			outlineShader.setMatrix4("proj", projection);
+			outlineShader.setMatrix4("view", view);
+			//
+			// Render the outline (scaled model)
+			glm::mat4 model_outline_matrix = glm::mat4(1.0f);
+			model_outline_matrix = glm::translate(model_outline_matrix, glm::vec3(backpackPos));
+			// Scale by factor larger than before
+			model_outline_matrix = glm::scale(model_outline_matrix, glm::vec3(0.51f));
+			outlineShader.setMatrix4("model", model_outline_matrix);
+			backpackModel.Draw(outlineShader);
+		}
 
 		// Print FPS
 		float fps = 1.0f / deltaTime;
@@ -630,7 +647,7 @@ void setupCubeObjects(Shader lightingShader, glm::vec3 lightColor, glm::vec3 pl_
 	lightingShader.setVec3("pointLights[0].position", movingLightPos);
 	//
 	// Flashlight properties
-	lightingShader.setBool("flashlight.on", flashlightOn);
+	lightingShader.setBool("flashlight.on", isFlashlightOn);
 	lightingShader.setVec3("flashlight.ambient", fl_ambientColor);
 	lightingShader.setVec3("flashlight.diffuse", fl_diffuseColor);
 	lightingShader.setVec3("flashlight.specular", fl_specularIntensity);
@@ -650,7 +667,7 @@ void setupCubeObjects(Shader lightingShader, glm::vec3 lightColor, glm::vec3 pl_
 	lightingShader.setVec3("dirLights[0].diffuse", dl_diffuseColor);
 	lightingShader.setVec3("dirLights[0].specular", dl_specularIntensity);
 	// Directional light direction
-	lightingShader.setVec3("dirLights[0].direction", glm::vec3(1.0f, -0.5f, -1.0f));
+	lightingShader.setVec3("dirLights[0].direction", glm::vec3(-1.0f, -1.0f, 0.0f));
 }
 
 void setupLampObject(Shader lampShader, glm::vec3 lightColor)
@@ -712,7 +729,7 @@ void setupModelObject(Shader modelShader, glm::vec3 lightColor, glm::vec3 pl_amb
 	modelShader.setVec3("pointLights[0].position", movingLightPos);
 	//
 	// Flashlight properties
-	modelShader.setBool("flashlight.on", flashlightOn);
+	modelShader.setBool("flashlight.on", isFlashlightOn);
 	modelShader.setVec3("flashlight.ambient", fl_ambientColor);
 	modelShader.setVec3("flashlight.diffuse", fl_diffuseColor);
 	modelShader.setVec3("flashlight.specular", fl_specularIntensity);
@@ -764,9 +781,15 @@ void processInput(GLFWwindow* window)
 
 	// Flashight on/off
 	if (glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS)
-		flashlightOn = true;
+		isFlashlightOn = true;
 	if (glfwGetKey(window, GLFW_KEY_6) == GLFW_PRESS)
-		flashlightOn = false;
+		isFlashlightOn = false;
+
+	// Outline on/off
+	if (glfwGetKey(window, GLFW_KEY_7) == GLFW_PRESS)
+		isOutlineOn = true;
+	if (glfwGetKey(window, GLFW_KEY_8) == GLFW_PRESS)
+		isOutlineOn = false;
 
 }
 
@@ -800,9 +823,9 @@ void scroll_callback(GLFWwindow* window, double xOffset, double yOffset)
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) 
 {
 	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
-		flashlightOn = true;
+		isFlashlightOn = true;
 	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)
-		flashlightOn = false;
+		isFlashlightOn = false;
 }
 
 
